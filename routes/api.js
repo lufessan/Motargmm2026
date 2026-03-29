@@ -4,23 +4,22 @@ import Tesseract from 'tesseract.js';
 
 const router = Router();
 
-// NLLB models for translation (supports 200+ languages)
 const ALLOWED_MODELS = [
-  'facebook/nllb-200-distilled-600M',  // Fast, good quality
-  'facebook/nllb-200-1.3B',             // Better quality
-  'facebook/nllb-200-3.3B'              // Best quality
+  'mistralai/Mistral-7B-Instruct-v0.2',
+  'meta-llama/Llama-2-7b-chat-hf',
+  'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
 ];
 
 function getHF() {
   const token = process.env.HUGGINGFACE_API_TOKEN;
   if (!token) {
-    throw new Error('HUGGINGFACE_API_TOKEN is not configured. Get a free token from: https://huggingface.co/settings/tokens');
+    throw new Error('HUGGINGFACE_API_TOKEN is not configured.');
   }
   return new HfInference(token);
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'facebook/nllb-200-distilled-600M';
+  return ALLOWED_MODELS.includes(model) ? model : 'mistralai/Mistral-7B-Instruct-v0.2';
 }
 
 // Extract text from image using Tesseract OCR
@@ -28,7 +27,7 @@ async function extractTextFromImage(imageBase64) {
   try {
     const { data: { text } } = await Tesseract.recognize(
       imageBase64,
-      'eng+ara', // English and Arabic languages
+      'eng+ara',
       { logger: m => console.log('OCR Progress:', m.progress) }
     );
     return text;
@@ -38,73 +37,46 @@ async function extractTextFromImage(imageBase64) {
   }
 }
 
-// Geographic terminology dictionary for accurate translations
-const GEO_DICTIONARY = {
-  'landform': 'أشكال سطح الأرض',
-  'terrain': 'الأرضية/التضاريس',
-  'altitude': 'الارتفاع عن سطح البحر',
-  'latitude': 'دائرة العرض',
-  'longitude': 'خط الطول',
-  'elevation': 'الارتفاع',
-  'plateau': 'هضبة',
-  'valley': 'وادي',
-  'basin': 'حوض',
-  'delta': 'دلتا',
-  'estuary': 'مصب النهر',
-  'canyon': 'أخدود',
-  'gorge': 'مضيق عميق',
-  'ridge': 'سلسلة جبلية',
-  'watershed': 'حوض التصريف المائي',
-  'tributary': 'رافد نهر',
-  'confluence': 'التقاء النهر',
-  'floodplain': 'سهل فيضي',
-  'wetland': 'أراضي رطبة',
-  'ecosystem': 'النظام البيئي',
-  'biome': 'منطقة حيوية',
-  'strata': 'طبقات جيولوجية',
-  'sediment': 'الرسوبيات',
-  'erosion': 'التعرية',
-  'deposition': 'الترسيب',
-  'weathering': 'التجوية',
-  'climate': 'المناخ',
-  'weather': 'الطقس',
-  'precipitation': 'الهطول المائي',
-  'topography': 'الطبوغرافيا/طبيعة السطح',
-  'geography': 'الجغرافيا',
-  'geomorphology': 'علم أشكال سطح الأرض',
-  'hydrogeology': 'الهيدروجيولوجيا/جيولوجيا المياه',
-  'seismology': 'علم الزلازل',
-  'cartography': 'فن رسم الخرائط',
-};
-
-// Translate text using NLLB with geographic context
-async function translateText(text, srcLang, tgtLang, model) {
+// Translate with geographic expertise using AI model understanding
+async function translateWithGeographicExpertise(text, srcLang, tgtLang, model) {
   const hf = getHF();
   
-  // Check for geographic terms and use dictionary if found
-  const lowerText = text.toLowerCase();
-  for (const [eng, arb] of Object.entries(GEO_DICTIONARY)) {
-    const regex = new RegExp(`\\b${eng}\\b`, 'gi');
-    if (regex.test(lowerText)) {
-      // If exact geographic term found, replace with accurate translation
-      return text.replace(regex, (match) => {
-        return lowerText.includes(match.toLowerCase()) ? arb : match;
-      });
-    }
-  }
+  const targetLang = tgtLang === 'ara_Arab' ? 'Arabic' : 'English';
+  const sourceLang = srcLang === 'eng_Latn' ? 'English' : 'Arabic';
   
-  // For non-dictionary terms, use NLLB with geographic context prompt
-  const contextualInput = `As a geography expert, translate this geographic term accurately (not literally): ${text}`;
-  
-  const response = await hf.translation({
+  const systemPrompt = `You are an expert geography professor with a PhD in Geographic Sciences. Your role is to translate geographic and scientific terms with precision and academic rigor.
+
+CRITICAL RULES:
+1. NEVER provide literal word-for-word translations
+2. Translate based on MEANING and GEOGRAPHIC CONTEXT, not words
+3. Use scientifically accurate terminology that a university geographer would use
+4. If a term has multiple valid meanings in geography, choose the most specific one
+5. For compound terms, translate as a meaningful phrase, not individual words
+6. Provide the translation directly without explanation
+
+EXAMPLES OF CORRECT vs INCORRECT:
+- "landform" → CORRECT: "أشكال سطح الأرض" | WRONG: "شكل الأرض"
+- "erosion" → CORRECT: "التعرية" | WRONG: "التآكل"
+- "watershed" → CORRECT: "حوض التصريف المائي" | WRONG: "فراغ المياه"
+- "topography" → CORRECT: "الطبوغرافيا/تضاريس المنطقة" | WRONG: "أعلى الجغرافيا"
+
+Now translate this geographic text from ${sourceLang} to ${targetLang} with precision:
+"${text}"
+
+Respond ONLY with the accurate translation, nothing else.`;
+
+  const response = await hf.textGeneration({
     model,
-    inputs: contextualInput,
+    inputs: systemPrompt,
     parameters: {
-      src_lang: srcLang,
-      tgt_lang: tgtLang,
+      max_new_tokens: 256,
+      temperature: 0.3, // Low temperature for consistency
+      top_p: 0.9,
+      do_sample: true,
     },
   });
-  return response[0]?.translation_text || '';
+
+  return response.generated_text?.split('Respond ONLY with the accurate translation, nothing else.')[1]?.trim() || '';
 }
 
 router.get('/status', (req, res) => {
@@ -130,7 +102,7 @@ router.post('/chat', async (req, res) => {
     if (files && files.length > 0 && activeTab === 'translate') {
       console.log('Processing image for OCR...');
       try {
-        const imageData = files[0].data; // base64 data URL
+        const imageData = files[0].data;
         const extractedText = await extractTextFromImage(imageData);
         textToProcess = extractedText || input;
         console.log('Extracted text:', textToProcess);
@@ -141,32 +113,17 @@ router.post('/chat', async (req, res) => {
     }
 
     if (activeTab === 'search') {
-      // For search, provide a simple geographic answer
+      // For search, provide a geographic answer
       res.json({
         text: `جغرافيا: ${textToProcess}`,
         sources: undefined,
       });
     } else {
-      // For translation, use NLLB model with geographic expertise
+      // For translation with geographic expertise
       const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
       const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
 
-      // Check if term exists in geographic dictionary for accurate translation
-      const lowerText = textToProcess.toLowerCase();
-      let translatedText = '';
-      
-      // Direct dictionary lookup for geographic terms
-      for (const [eng, arb] of Object.entries(GEO_DICTIONARY)) {
-        if (lowerText.includes(eng.toLowerCase())) {
-          translatedText = arb;
-          break;
-        }
-      }
-      
-      // If no dictionary match, use NLLB model
-      if (!translatedText) {
-        translatedText = await translateText(textToProcess, srcLang, tgtLang, selectedModel);
-      }
+      const translatedText = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, selectedModel);
 
       res.json({
         text: translatedText || 'لم يتم الحصول على ترجمة.',
@@ -203,17 +160,22 @@ router.post('/alternatives', async (req, res) => {
     const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
     const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
 
+    const targetLang = tgtLang === 'ara_Arab' ? 'Arabic' : 'English';
+    const sourceLang = srcLang === 'eng_Latn' ? 'English' : 'Arabic';
+
+    const hf = getHF();
+    
     // Get primary translation
-    const primaryTranslation = await translateText(textToProcess, srcLang, tgtLang, selectedModel);
+    const primaryTranslation = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, selectedModel);
 
-    // Fallback model for alternatives
-    const fallbackModel = selectedModel === 'facebook/nllb-200-distilled-600M'
-      ? 'facebook/nllb-200-1.3B'
-      : 'facebook/nllb-200-distilled-600M';
+    // Use fallback model for alternatives
+    const fallbackModel = selectedModel === 'mistralai/Mistral-7B-Instruct-v0.2'
+      ? 'meta-llama/Llama-2-7b-chat-hf'
+      : 'mistralai/Mistral-7B-Instruct-v0.2';
 
-    const alternativeTranslation = await translateText(textToProcess, srcLang, tgtLang, fallbackModel);
+    const alternativeTranslation = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, fallbackModel);
 
-    const result = `**الترجمة الأساسية:**\n${primaryTranslation}\n\n**ترجمات بديلة:**\n${alternativeTranslation}`;
+    const result = `**الترجمة الأساسية:**\n${primaryTranslation}\n\n**ترجمة بديلة:**\n${alternativeTranslation}`;
 
     res.json({ text: result });
   } catch (error) {
