@@ -1,25 +1,24 @@
 import { Router } from 'express';
-import { HfInference } from '@huggingface/inference';
+import { GoogleGenAI } from '@google/genai';
 import Tesseract from 'tesseract.js';
 
 const router = Router();
 
 const ALLOWED_MODELS = [
-  'mistralai/Mistral-7B-Instruct-v0.2',
-  'meta-llama/Llama-2-7b-chat-hf',
-  'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-exp'
 ];
 
-function getHF() {
-  const token = process.env.HUGGINGFACE_API_TOKEN;
-  if (!token) {
-    throw new Error('HUGGINGFACE_API_TOKEN is not configured.');
+function getAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured.');
   }
-  return new HfInference(token);
+  return new GoogleGenAI({ apiKey });
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'mistralai/Mistral-7B-Instruct-v0.2';
+  return ALLOWED_MODELS.includes(model) ? model : 'gemini-1.5-pro';
 }
 
 // Extract text from image using Tesseract OCR
@@ -35,48 +34,6 @@ async function extractTextFromImage(imageBase64) {
     console.error('OCR Error:', error);
     throw new Error('Failed to extract text from image');
   }
-}
-
-// Translate with geographic expertise using AI model understanding
-async function translateWithGeographicExpertise(text, srcLang, tgtLang, model) {
-  const hf = getHF();
-  
-  const targetLang = tgtLang === 'ara_Arab' ? 'Arabic' : 'English';
-  const sourceLang = srcLang === 'eng_Latn' ? 'English' : 'Arabic';
-  
-  const systemPrompt = `You are an expert geography professor with a PhD in Geographic Sciences. Your role is to translate geographic and scientific terms with precision and academic rigor.
-
-CRITICAL RULES:
-1. NEVER provide literal word-for-word translations
-2. Translate based on MEANING and GEOGRAPHIC CONTEXT, not words
-3. Use scientifically accurate terminology that a university geographer would use
-4. If a term has multiple valid meanings in geography, choose the most specific one
-5. For compound terms, translate as a meaningful phrase, not individual words
-6. Provide the translation directly without explanation
-
-EXAMPLES OF CORRECT vs INCORRECT:
-- "landform" → CORRECT: "أشكال سطح الأرض" | WRONG: "شكل الأرض"
-- "erosion" → CORRECT: "التعرية" | WRONG: "التآكل"
-- "watershed" → CORRECT: "حوض التصريف المائي" | WRONG: "فراغ المياه"
-- "topography" → CORRECT: "الطبوغرافيا/تضاريس المنطقة" | WRONG: "أعلى الجغرافيا"
-
-Now translate this geographic text from ${sourceLang} to ${targetLang} with precision:
-"${text}"
-
-Respond ONLY with the accurate translation, nothing else.`;
-
-  const response = await hf.textGeneration({
-    model,
-    inputs: systemPrompt,
-    parameters: {
-      max_new_tokens: 256,
-      temperature: 0.3, // Low temperature for consistency
-      top_p: 0.9,
-      do_sample: true,
-    },
-  });
-
-  return response.generated_text?.split('Respond ONLY with the accurate translation, nothing else.')[1]?.trim() || '';
 }
 
 router.get('/status', (req, res) => {
@@ -112,24 +69,54 @@ router.post('/chat', async (req, res) => {
       }
     }
 
+    const ai = getAI();
+    let systemPrompt = '';
+    let userMessage = '';
+
     if (activeTab === 'search') {
-      // For search, provide a geographic answer
-      res.json({
-        text: `جغرافيا: ${textToProcess}`,
-        sources: undefined,
-      });
+      systemPrompt = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately and comprehensively in Arabic.`;
+      userMessage = `Answer this geographical query in Arabic: ${textToProcess}`;
     } else {
-      // For translation with geographic expertise
-      const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
-      const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
+      systemPrompt = `You are an expert geography professor. Your task is to translate geographic terms with precision and academic rigor.
+      
+CRITICAL RULES:
+1. NEVER provide literal word-for-word translations
+2. Translate based on GEOGRAPHIC CONTEXT and MEANING
+3. Use the accurate, scientifically accepted term a university geographer would use
+4. Provide the translation directly without explanation
 
-      const translatedText = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, selectedModel);
+EXAMPLES:
+- "landform" → "أشكال سطح الأرض" (NOT "شكل الأرض")
+- "erosion" → "التعرية" (NOT "التآكل")  
+- "watershed" → "حوض التصريف المائي" (NOT "فراغ المياه")`;
+      
+      const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
+      userMessage = `Translate to ${targetLang}: ${textToProcess}`;
+    }
 
-      res.json({
-        text: translatedText || 'لم يتم الحصول على ترجمة.',
-        sources: undefined,
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: selectedModel,
+        contents: [
+          { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userMessage}` }] }
+        ],
+      });
+    } catch (primaryError) {
+      console.error('Primary model failed, trying fallback...', primaryError);
+      const fallbackModel = selectedModel === 'gemini-2.0-flash' ? 'gemini-2.0-flash-exp' : 'gemini-2.0-flash';
+      response = await ai.models.generateContent({
+        model: fallbackModel,
+        contents: [
+          { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userMessage}` }] }
+        ],
       });
     }
+
+    res.json({
+      text: response.text || 'لم يتم الحصول على نتيجة.',
+      sources: undefined,
+    });
   } catch (error) {
     console.error('Chat API error:', error);
     res.status(500).json({
@@ -157,27 +144,19 @@ router.post('/alternatives', async (req, res) => {
       }
     }
 
-    const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
-    const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
+    const ai = getAI();
+    const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
 
-    const targetLang = tgtLang === 'ara_Arab' ? 'Arabic' : 'English';
-    const sourceLang = srcLang === 'eng_Latn' ? 'English' : 'Arabic';
-
-    const hf = getHF();
+    const prompt = `You are a geography expert. Provide alternative translations of "${textToProcess}" to ${targetLang}.
     
-    // Get primary translation
-    const primaryTranslation = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, selectedModel);
+Give at least 2-3 variations with explanations of when each is used in geographic contexts.`;
 
-    // Use fallback model for alternatives
-    const fallbackModel = selectedModel === 'mistralai/Mistral-7B-Instruct-v0.2'
-      ? 'meta-llama/Llama-2-7b-chat-hf'
-      : 'mistralai/Mistral-7B-Instruct-v0.2';
+    const response = await ai.models.generateContent({
+      model: selectedModel,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
 
-    const alternativeTranslation = await translateWithGeographicExpertise(textToProcess, srcLang, tgtLang, fallbackModel);
-
-    const result = `**الترجمة الأساسية:**\n${primaryTranslation}\n\n**ترجمة بديلة:**\n${alternativeTranslation}`;
-
-    res.json({ text: result });
+    res.json({ text: response.text || 'لم يتم الحصول على ترجمات بديلة.' });
   } catch (error) {
     console.error('Alternatives API error:', error);
     res.status(500).json({
