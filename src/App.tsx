@@ -3,9 +3,9 @@ import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
-  { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral 7B (متخصص)' },
-  { id: 'meta-llama/Llama-2-7b-chat-hf', name: 'Llama 2 Chat (ذكي)' },
-  { id: 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO', name: 'Nous Hermes 2 (متقدم)' }
+  { id: 'tiiuae/falcon-7b-instruct', name: 'Falcon 7B (سريع جداً)' },
+  { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral 7B (متوازن)' },
+  { id: 'meta-llama/Llama-2-7b-chat-hf', name: 'Llama 2 Chat (ذكي)' }
 ];
 
 type Source = {
@@ -44,7 +44,7 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('mistralai/Mistral-7B-Instruct-v0.2');
+  const [selectedModel, setSelectedModel] = useState('tiiuae/falcon-7b-instruct');
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;

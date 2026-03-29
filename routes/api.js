@@ -4,10 +4,11 @@ import Tesseract from 'tesseract.js';
 
 const router = Router();
 
+// Lightweight, fast models
 const ALLOWED_MODELS = [
+  'tiiuae/falcon-7b-instruct',
   'mistralai/Mistral-7B-Instruct-v0.2',
-  'meta-llama/Llama-2-7b-chat-hf',
-  'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+  'meta-llama/Llama-2-7b-chat-hf'
 ];
 
 function getHF() {
@@ -19,7 +20,7 @@ function getHF() {
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'mistralai/Mistral-7B-Instruct-v0.2';
+  return ALLOWED_MODELS.includes(model) ? model : 'tiiuae/falcon-7b-instruct';
 }
 
 // Extract text from image using Tesseract OCR
@@ -30,7 +31,7 @@ async function extractTextFromImage(imageBase64) {
       'eng+ara',
       { logger: m => console.log('OCR Progress:', m.progress) }
     );
-    return text;
+    return text.substring(0, 500); // Limit extracted text
   } catch (error) {
     console.error('OCR Error:', error);
     throw new Error('Failed to extract text from image');
@@ -54,7 +55,7 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, translationDir, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    let textToProcess = input;
+    let textToProcess = input.substring(0, 200); // Limit input length
 
     // If files are provided and it's translation mode, extract text from image
     if (files && files.length > 0 && activeTab === 'translate') {
@@ -62,42 +63,21 @@ router.post('/chat', async (req, res) => {
       try {
         const imageData = files[0].data;
         const extractedText = await extractTextFromImage(imageData);
-        textToProcess = extractedText || input;
+        textToProcess = extractedText || textToProcess;
         console.log('Extracted text:', textToProcess);
       } catch (ocrError) {
         console.error('OCR failed, using input text instead:', ocrError);
-        textToProcess = input;
       }
     }
 
     const hf = getHF();
-    let messages = [];
-    let systemMessage = '';
+    let prompt = '';
 
     if (activeTab === 'search') {
-      systemMessage = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately and comprehensively in Arabic.`;
-      messages = [
-        { role: 'user', content: `${systemMessage}\n\nAnswer this geographical query in Arabic: ${textToProcess}` }
-      ];
+      prompt = `Answer this geographic query in Arabic: ${textToProcess}`;
     } else {
-      systemMessage = `You are an expert geography professor with PhD-level expertise. Your task is to translate geographic terms with precision and academic rigor.
-
-CRITICAL RULES:
-1. NEVER provide literal word-for-word translations
-2. Translate based on GEOGRAPHIC CONTEXT and MEANING only
-3. Use the accurate, scientifically accepted term a university geographer would use
-4. Provide ONLY the translation, no explanations
-
-EXAMPLES OF CORRECT TRANSLATIONS:
-- "landform" → "أشكال سطح الأرض" (NOT "شكل الأرض")
-- "erosion" → "التعرية" (NOT "التآكل")
-- "watershed" → "حوض التصريف المائي" (NOT "فراغ المياه")
-- "topography" → "الطبوغرافيا/تضاريس المنطقة" (NOT "أعلى الجغرافيا")`;
-
       const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
-      messages = [
-        { role: 'user', content: `${systemMessage}\n\nTranslate to ${targetLang}: ${textToProcess}` }
-      ];
+      prompt = `Translate to ${targetLang} (expert geographic translation, not literal): ${textToProcess}`;
     }
 
     let result;
@@ -107,21 +87,21 @@ EXAMPLES OF CORRECT TRANSLATIONS:
         inputs: {
           past_user_inputs: [],
           generated_responses: [],
-          text: messages[0].content
+          text: prompt
         }
       });
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'mistralai/Mistral-7B-Instruct-v0.2'
-        ? 'meta-llama/Llama-2-7b-chat-hf'
-        : 'mistralai/Mistral-7B-Instruct-v0.2';
+      const fallbackModel = selectedModel === 'tiiuae/falcon-7b-instruct'
+        ? 'mistralai/Mistral-7B-Instruct-v0.2'
+        : 'tiiuae/falcon-7b-instruct';
 
       result = await hf.conversational({
         model: fallbackModel,
         inputs: {
           past_user_inputs: [],
           generated_responses: [],
-          text: messages[0].content
+          text: prompt
         }
       });
     }
@@ -142,32 +122,13 @@ EXAMPLES OF CORRECT TRANSLATIONS:
 
 router.post('/alternatives', async (req, res) => {
   try {
-    const { originalInput, selectedModel: rawModel, translationDir, files } = req.body;
+    const { originalInput, selectedModel: rawModel, translationDir } = req.body;
     const selectedModel = validateModel(rawModel);
-
-    let textToProcess = originalInput;
-
-    // Extract text from image if provided
-    if (files && files.length > 0) {
-      try {
-        const imageData = files[0].data;
-        const extractedText = await extractTextFromImage(imageData);
-        textToProcess = extractedText || originalInput;
-      } catch (ocrError) {
-        console.error('OCR failed for alternatives:', ocrError);
-        textToProcess = originalInput;
-      }
-    }
+    const textToProcess = originalInput.substring(0, 200);
 
     const hf = getHF();
     const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
-
-    const prompt = `You are a geography expert. Provide 2-3 alternative translations of "${textToProcess}" to ${targetLang}.
-    
-Each translation should be for a different geographic context or meaning. Format as:
-1. Translation: [meaning and when to use]
-2. Translation: [meaning and when to use]
-3. Translation: [meaning and when to use]`;
+    const prompt = `Give 2 alternative translations to ${targetLang}: ${textToProcess}`;
 
     const result = await hf.conversational({
       model: selectedModel,
