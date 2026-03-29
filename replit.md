@@ -1,13 +1,14 @@
 # GeoMaster (جيو ماستر)
 
 ## Overview
-A React + Vite frontend application for geographic search and translation using Google's Gemini AI. The app allows users to ask geographical questions and translate geographic terms between English and Arabic.
+A React + Vite frontend application for geographic search and translation using Hugging Face Inference API. The app allows users to ask geographical questions and translate geographic terms between English and Arabic.
 
 ## Tech Stack
 - **Frontend**: React 19, TypeScript, Tailwind CSS v4
 - **Build Tool**: Vite 6
 - **Backend**: Express.js (Node.js)
-- **AI**: Google Gemini via Replit AI Integrations (no external API key needed)
+- **AI**: Hugging Face Inference API (chatCompletion)
+- **OCR**: Tesseract.js (English + Arabic text extraction from images)
 - **UI Libraries**: lucide-react, react-markdown, motion
 
 ## Project Structure
@@ -26,8 +27,14 @@ A React + Vite frontend application for geographic search and translation using 
 ```
 
 ## Environment Variables
-- `AI_INTEGRATIONS_GEMINI_API_KEY` - Auto-managed by Replit AI Integrations
-- `AI_INTEGRATIONS_GEMINI_BASE_URL` - Auto-managed by Replit AI Integrations
+- `HUGGINGFACE_API_TOKEN` - Hugging Face API token for inference
+
+## Available Models
+- `mistralai/Mistral-7B-Instruct-v0.2` - Fast (default)
+- `Qwen/Qwen2.5-7B-Instruct` - Balanced
+- `meta-llama/Llama-3.1-8B-Instruct` - Smart
+
+All models use `hf.chatCompletion()` API. Falcon 7B and Llama 2 are NOT supported (no inference provider). NLLB models also have no provider.
 
 ## Running the App
 
@@ -56,12 +63,12 @@ Runs on `http://0.0.0.0:PORT`
 - `POST /api/alternatives` → Alternative meanings/translations
 
 ## Features
-- **Geographic Search**: Ask questions about geography, answered using Gemini AI with Google Search grounding
+- **Geographic Search**: Ask questions about geography in Arabic
 - **Geographic Translator**: Translate geographic terms between English and Arabic with scientific accuracy
+- **OCR Support**: Extract text from uploaded images (English + Arabic) via Tesseract.js
 - RTL (right-to-left) layout for Arabic support
-- File upload support (images and documents)
-- Multi-model selection (Gemini 2.5 Flash, Gemini 2.5 Pro, Gemini 3 Flash)
-- Source citations from web search
+- File upload support (images)
+- Multi-model selection
 - Fallback model support if primary model fails
 
 ## Deployment
@@ -76,3 +83,4 @@ Configured as autoscale deployment:
 - Server.js body limit set to 50mb to handle file uploads
 - Vite proxies `/api/*` to `http://localhost:3001` in development
 - All AI calls go through the backend - no API keys exposed to frontend
+- Uses `hf.chatCompletion()` - NOT `hf.conversational()` (deprecated/removed in v4)

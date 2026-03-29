@@ -4,11 +4,10 @@ import Tesseract from 'tesseract.js';
 
 const router = Router();
 
-// Lightweight, fast models
 const ALLOWED_MODELS = [
-  'tiiuae/falcon-7b-instruct',
   'mistralai/Mistral-7B-Instruct-v0.2',
-  'meta-llama/Llama-2-7b-chat-hf'
+  'Qwen/Qwen2.5-7B-Instruct',
+  'meta-llama/Llama-3.1-8B-Instruct'
 ];
 
 function getHF() {
@@ -20,10 +19,9 @@ function getHF() {
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'tiiuae/falcon-7b-instruct';
+  return ALLOWED_MODELS.includes(model) ? model : 'mistralai/Mistral-7B-Instruct-v0.2';
 }
 
-// Extract text from image using Tesseract OCR
 async function extractTextFromImage(imageBase64) {
   try {
     const { data: { text } } = await Tesseract.recognize(
@@ -31,11 +29,20 @@ async function extractTextFromImage(imageBase64) {
       'eng+ara',
       { logger: m => console.log('OCR Progress:', m.progress) }
     );
-    return text.substring(0, 500); // Limit extracted text
+    return text.substring(0, 500);
   } catch (error) {
     console.error('OCR Error:', error);
     throw new Error('Failed to extract text from image');
   }
+}
+
+async function callModel(hf, model, prompt) {
+  const result = await hf.chatCompletion({
+    model: model,
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 300,
+  });
+  return result.choices?.[0]?.message?.content || '';
 }
 
 router.get('/status', (req, res) => {
@@ -55,9 +62,8 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, translationDir, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    let textToProcess = input.substring(0, 200); // Limit input length
+    let textToProcess = input.substring(0, 200);
 
-    // If files are provided and it's translation mode, extract text from image
     if (files && files.length > 0 && activeTab === 'translate') {
       console.log('Processing image for OCR...');
       try {
@@ -74,46 +80,29 @@ router.post('/chat', async (req, res) => {
     let prompt = '';
 
     if (activeTab === 'search') {
-      prompt = `Answer this geographic query in Arabic: ${textToProcess}`;
+      prompt = `Answer this geographic query in Arabic briefly: ${textToProcess}`;
     } else {
       const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
       prompt = `Translate to ${targetLang} (expert geographic translation, not literal): ${textToProcess}`;
     }
 
-    let result;
+    let responseText;
     try {
-      result = await hf.conversational({
-        model: selectedModel,
-        inputs: {
-          past_user_inputs: [],
-          generated_responses: [],
-          text: prompt
-        }
-      });
+      responseText = await callModel(hf, selectedModel, prompt);
     } catch (primaryError) {
-      console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'tiiuae/falcon-7b-instruct'
-        ? 'mistralai/Mistral-7B-Instruct-v0.2'
-        : 'tiiuae/falcon-7b-instruct';
-
-      result = await hf.conversational({
-        model: fallbackModel,
-        inputs: {
-          past_user_inputs: [],
-          generated_responses: [],
-          text: prompt
-        }
-      });
+      console.error('Primary model failed, trying fallback...', primaryError.message);
+      const fallbackModel = selectedModel === 'mistralai/Mistral-7B-Instruct-v0.2'
+        ? 'Qwen/Qwen2.5-7B-Instruct'
+        : 'mistralai/Mistral-7B-Instruct-v0.2';
+      responseText = await callModel(hf, fallbackModel, prompt);
     }
 
-    const responseText = result.generated_text || 'لم يتم الحصول على نتيجة.';
-
     res.json({
-      text: responseText,
+      text: responseText || 'لم يتم الحصول على نتيجة.',
       sources: undefined,
     });
   } catch (error) {
-    console.error('Chat API error:', error);
+    console.error('Chat API error:', error.message);
     res.status(500).json({
       error: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.',
     });
@@ -130,18 +119,11 @@ router.post('/alternatives', async (req, res) => {
     const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
     const prompt = `Give 2 alternative translations to ${targetLang}: ${textToProcess}`;
 
-    const result = await hf.conversational({
-      model: selectedModel,
-      inputs: {
-        past_user_inputs: [],
-        generated_responses: [],
-        text: prompt
-      }
-    });
+    const responseText = await callModel(hf, selectedModel, prompt);
 
-    res.json({ text: result.generated_text || 'لم يتم الحصول على ترجمات بديلة.' });
+    res.json({ text: responseText || 'لم يتم الحصول على ترجمات بديلة.' });
   } catch (error) {
-    console.error('Alternatives API error:', error);
+    console.error('Alternatives API error:', error.message);
     res.status(500).json({
       error: 'حدث خطأ أثناء جلب الترجمات البديلة.',
     });
