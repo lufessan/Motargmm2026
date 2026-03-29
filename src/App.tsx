@@ -237,7 +237,7 @@ export default function App() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen text-white font-sans flex flex-col relative z-0 h-screen overflow-hidden bg-black">
+    <div dir="rtl" className="min-h-screen text-white flex flex-col relative z-0 h-screen overflow-hidden bg-black" style={{ fontFamily: "'Cairo', sans-serif" }}>
       
       <video
         autoPlay
@@ -260,38 +260,36 @@ export default function App() {
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
         <header className={`flex flex-col items-center shrink-0 transition-all duration-500 ${currentMessages.length > 0 ? 'mb-2 md:mb-6' : 'mb-6'}`}>
-          <h1 className={`font-bold drop-shadow-lg text-white flex items-center justify-center gap-3 transition-all duration-500 ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
-            <div className={`relative rounded-full overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)] flex items-center justify-center bg-black border border-blue-400/50 transition-all ${currentMessages.length > 0 ? 'w-6 h-6 md:w-10 md:h-10' : 'w-10 h-10'}`}>
-              <img 
-                src="/earth-animated.gif" 
-                alt="شعار جيو ماستر" 
-                className="w-[115%] h-[115%] max-w-none object-cover"
-              />
-            </div>
+          <h1 className={`font-extrabold drop-shadow-lg text-white flex items-center justify-center gap-3 transition-all duration-500 ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
+            <img 
+              src="/book-mascot.png" 
+              alt="شعار جيو ماستر" 
+              className={`drop-shadow-[0_0_10px_rgba(234,179,8,0.4)] transition-all object-contain ${currentMessages.length > 0 ? 'w-8 h-8 md:w-12 md:h-12' : 'w-12 h-12 md:w-14 md:h-14'}`}
+            />
             جيو ماستر
           </h1>
           
-          <div className={`flex gap-2 md:gap-4 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
+          <div className={`flex gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
             <button
               onClick={() => setActiveTab('search')}
-              className={`px-4 md:px-6 py-1.5 md:py-2.5 rounded-full text-xs md:text-base font-medium transition-all flex items-center gap-2 border ${
+              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
                 activeTab === 'search' 
-                  ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
-                  : 'bg-black/40 border-white/10 text-gray-300 hover:bg-white/10'
+                  ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105' 
+                  : 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
               }`}
             >
-              <Search size={16} className="md:w-[18px] md:h-[18px]" />
+              <Search size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>البحث الجغرافي</span>
             </button>
             <button
               onClick={() => setActiveTab('translate')}
-              className={`px-4 md:px-6 py-1.5 md:py-2.5 rounded-full text-xs md:text-base font-medium transition-all flex items-center gap-2 border ${
+              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
                 activeTab === 'translate' 
-                  ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
-                  : 'bg-black/40 border-white/10 text-gray-300 hover:bg-white/10'
+                  ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105' 
+                  : 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
               }`}
             >
-              <Languages size={16} className="md:w-[18px] md:h-[18px]" />
+              <Languages size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>المترجم الجغرافي</span>
             </button>
           </div>
@@ -300,7 +298,7 @@ export default function App() {
         <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-4 px-2 md:px-4 scrollbar-hide">
           {currentMessages.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center text-center opacity-70">
-              <img src="/earth-animated.gif" alt="جيو ماستر" className="w-16 h-16 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)] mb-4" />
+              <img src="/book-mascot.png" alt="جيو ماستر" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] mb-4 object-contain" />
               <h2 className="text-2xl font-semibold mb-2">مرحباً بك في جيو ماستر</h2>
               <p className="text-gray-300 max-w-md">
                 {activeTab === 'search' 
@@ -513,12 +511,12 @@ export default function App() {
                 className="relative group disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0.5 mr-0.5"
                 title="إرسال"
               >
-                <div className="absolute inset-0 bg-blue-500 rounded-full blur-lg opacity-40 group-hover:opacity-80 transition-opacity"></div>
-                <div className="w-10 h-10 relative z-10 rounded-full overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)] flex items-center justify-center bg-black border border-blue-400/50 group-hover:border-blue-300 transition-colors">
+                <div className="absolute inset-0 bg-yellow-500 rounded-full blur-lg opacity-30 group-hover:opacity-60 transition-opacity"></div>
+                <div className="w-10 h-10 relative z-10 flex items-center justify-center">
                   <img 
-                    src="/earth-animated.gif" 
+                    src="/book-mascot.png" 
                     alt="إرسال" 
-                    className="w-[115%] h-[115%] max-w-none object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
                   />
                 </div>
               </button>
