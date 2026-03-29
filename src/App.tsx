@@ -146,7 +146,76 @@ export default function App() {
     }
   };
 
+  const handleCopyText = async (text: string, msgId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(msgId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleExtractSubmit = async () => {
+    if (fileData.length === 0) return;
+
+    const userMsgId = Date.now().toString();
+    const newUserMsg: Message = {
+      id: userMsgId,
+      role: 'user',
+      text: 'استخراج النصوص من الملف',
+      files: [...fileData],
+    };
+
+    const modelMsgId = (Date.now() + 1).toString();
+    const newModelMsg: Message = {
+      id: modelMsgId,
+      role: 'model',
+      text: '',
+      loading: true,
+    };
+
+    setExtractMessages(prev => [...prev, newUserMsg, newModelMsg]);
+    setLoading(true);
+
+    const currentFileData = [...fileData];
+    setSelectedFiles([]);
+    setFileData([]);
+
+    try {
+      const response = await fetch('/api/extract-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: currentFileData }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'حدث خطأ أثناء استخراج النصوص.');
+      }
+
+      setExtractMessages(prev => prev.map(msg =>
+        msg.id === modelMsgId
+          ? { ...msg, text: data.text, loading: false }
+          : msg
+      ));
+    } catch (error: any) {
+      console.error('Error extracting text:', error);
+      setExtractMessages(prev => prev.map(msg =>
+        msg.id === modelMsgId
+          ? { ...msg, text: error.message || 'حدث خطأ أثناء استخراج النصوص.', loading: false }
+          : msg
+      ));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (activeTab === 'extract') {
+      return handleExtractSubmit();
+    }
     if (!inputText.trim() && selectedFiles.length === 0) return;
 
     const userMsgId = Date.now().toString();
@@ -303,6 +372,21 @@ export default function App() {
               <Languages size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>المترجم الجغرافي</span>
             </button>
+            <button
+              onClick={() => setActiveTab('extract')}
+              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+                activeTab === 'extract' 
+                  ? isDark
+                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
+                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
+                  : isDark
+                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
+              }`}
+            >
+              <ScanText size={18} className="md:w-[20px] md:h-[20px]" />
+              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>استخراج النصوص</span>
+            </button>
             
             <button
               onClick={() => setIsDark(prev => !prev)}
@@ -326,7 +410,9 @@ export default function App() {
               <p className={`max-w-md transition-colors duration-500 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                 {activeTab === 'search' 
                   ? 'اطرح أي سؤال جغرافي وسأقوم بالبحث في المصادر الموثوقة للإجابة عليه.' 
-                  : 'أدخل أي مصطلح جغرافي لترجمته بدقة علمية بين العربية والإنجليزية.'}
+                  : activeTab === 'translate'
+                  ? 'أدخل أي مصطلح جغرافي لترجمته بدقة علمية بين العربية والإنجليزية.'
+                  : 'ارفع صورة أو ملف PDF وسأستخرج منه جميع النصوص لتنسخها وتستخدمها.'}
               </p>
             </div>
           ) : (
@@ -390,9 +476,28 @@ export default function App() {
                         <div className="h-3 bg-blue-500/20 rounded w-4/6"></div>
                       </div>
                     ) : (
-                      <div className={`markdown-body max-w-none text-right text-sm md:text-base leading-relaxed transition-colors duration-500 ${isDark ? 'text-gray-100 prose prose-invert' : 'text-gray-800 prose'}`} dir="rtl">
-                        <Markdown>{msg.text}</Markdown>
-                      </div>
+                      <>
+                        <div className={`markdown-body max-w-none text-right text-sm md:text-base leading-relaxed transition-colors duration-500 ${isDark ? 'text-gray-100 prose prose-invert' : 'text-gray-800 prose'}`} dir="rtl">
+                          <Markdown>{msg.text}</Markdown>
+                        </div>
+                        {activeTab === 'extract' && msg.role === 'model' && msg.text && (
+                          <button
+                            onClick={() => handleCopyText(msg.text, msg.id)}
+                            className={`mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                              copiedId === msg.id
+                                ? isDark
+                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                  : 'bg-green-100 text-green-700 border border-green-300/50'
+                                : isDark
+                                  ? 'bg-white/10 text-gray-300 hover:bg-white/20 border border-white/10 hover:border-white/20'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200/60 hover:border-gray-300/60'
+                            }`}
+                          >
+                            {copiedId === msg.id ? <Check size={14} /> : <Copy size={14} />}
+                            {copiedId === msg.id ? 'تم النسخ!' : 'نسخ النص'}
+                          </button>
+                        )}
+                      </>
                     )}
 
                     {msg.showAlternatives && (
@@ -504,19 +609,21 @@ export default function App() {
                   <div className="flex-grow" />
 
                   <div className="flex items-center gap-2">
-                    <label className={`flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-300 ${
-                      isDark 
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-300' 
-                        : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600'
-                    }`}>
-                      <input
-                        type="checkbox"
-                        checked={withExplanation}
-                        onChange={(e) => setWithExplanation(e.target.checked)}
-                        className="w-3 h-3 accent-teal-500"
-                      />
-                      مع الشرح
-                    </label>
+                    {activeTab !== 'extract' && (
+                      <label className={`flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-white/5 hover:bg-white/10 text-gray-300' 
+                          : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={withExplanation}
+                          onChange={(e) => setWithExplanation(e.target.checked)}
+                          className="w-3 h-3 accent-teal-500"
+                        />
+                        مع الشرح
+                      </label>
+                    )}
 
                     {activeTab === 'translate' && (
                       <button
@@ -589,7 +696,7 @@ export default function App() {
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : "أدخل المصطلح للترجمة..."}
+                      placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : activeTab === 'translate' ? "أدخل المصطلح للترجمة..." : "ارفع صورة أو PDF لاستخراج النصوص..."}
                       className={`flex-grow bg-transparent border-none outline-none resize-none py-2 px-1 text-sm md:text-base leading-relaxed scrollbar-hide transition-colors duration-500 ${
                         isDark 
                           ? 'text-white placeholder-gray-500' 
@@ -601,7 +708,7 @@ export default function App() {
 
                     <button
                       onClick={handleSubmit}
-                      disabled={loading || (!inputText.trim() && selectedFiles.length === 0)}
+                      disabled={loading || (activeTab === 'extract' ? selectedFiles.length === 0 : (!inputText.trim() && selectedFiles.length === 0))}
                       className={`group p-2.5 rounded-xl transition-all duration-300 shrink-0 mb-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
                         isDark
                           ? 'bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white shadow-[0_4px_15px_rgba(20,184,166,0.3)] hover:shadow-[0_6px_20px_rgba(20,184,166,0.5)]'
