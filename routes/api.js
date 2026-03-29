@@ -80,10 +80,13 @@ router.post('/chat', async (req, res) => {
     let prompt = '';
 
     if (activeTab === 'search') {
-      prompt = `Answer this geographic query in Arabic briefly: ${textToProcess}`;
+      prompt = `أجب على هذا السؤال الجغرافي باللغة العربية باختصار: ${textToProcess}`;
     } else {
-      const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
-      prompt = `Translate to ${targetLang} (expert geographic translation, not literal): ${textToProcess}`;
+      if (translationDir === 'en-ar') {
+        prompt = `أنت مترجم جغرافي أكاديمي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية كما يُستخدم في الكتب الجغرافية الأكاديمية العربية. أعط الترجمة الأكاديمية المتخصصة فقط بدون أي شرح.\n\nمثال: landform = التضاريس | continental shelf = الجرف القاري | erosion = التعرية\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+      } else {
+        prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations.\n\nTerm: ${textToProcess}\nTranslation:`;
+      }
     }
 
     let responseText;
@@ -116,8 +119,11 @@ router.post('/alternatives', async (req, res) => {
     const textToProcess = originalInput.substring(0, 200);
 
     const hf = getHF();
-    const targetLang = translationDir === 'en-ar' ? 'Arabic' : 'English';
-    const prompt = `Give 2 alternative translations to ${targetLang}: ${textToProcess}`;
+    if (translationDir === 'en-ar') {
+      var prompt = `أعط ترجمتين بديلتين للمصطلح الجغرافي التالي إلى العربية. أعط الترجمات فقط بدون شرح، كل ترجمة في سطر:\n\n${textToProcess}`;
+    } else {
+      var prompt = `Give 2 alternative English translations for this Arabic geographic term. Give only translations, each on a new line:\n\n${textToProcess}`;
+    }
 
     const responseText = await callModel(hf, selectedModel, prompt);
 
