@@ -81,6 +81,9 @@ export default function App() {
         reader.readAsDataURL(file);
       });
     }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const removeFile = (index: number) => {
