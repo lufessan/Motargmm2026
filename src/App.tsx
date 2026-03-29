@@ -9,8 +9,14 @@ const AVAILABLE_MODELS = [
   { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite (الخفيف)' }
 ];
 
-// Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Gemini API lazily to avoid crash when key is missing
+function getAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY غير موجود. يرجى إضافة مفتاح API من Gemini في إعدادات المشروع.');
+  }
+  return new GoogleGenAI({ apiKey });
+}
 
 type Source = {
   title: string;
@@ -127,7 +133,7 @@ export default function App() {
       3. المعنى بالعامية المصرية.
       اكتب الرد باختصار وتنسيق واضح في نقاط.`;
 
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: selectedModel,
         contents: prompt,
         config: {
@@ -254,6 +260,7 @@ export default function App() {
       const finalContents = [...historyContents, { role: 'user', parts: currentParts }];
 
       let response;
+      const ai = getAI();
       try {
         response = await ai.models.generateContent({
           model: selectedModel,
