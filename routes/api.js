@@ -89,7 +89,7 @@ router.post('/chat', async (req, res) => {
       });
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'gemini-3.1-pro-preview' ? 'gemini-3-flash-preview' : 'gemini-3.1-pro-preview';
+      const fallbackModel = selectedModel === 'gemini-2.0-flash' ? 'gemini-1.5-flash' : 'gemini-2.0-flash';
       response = await ai.models.generateContent({
         model: fallbackModel,
         contents: finalContents,
