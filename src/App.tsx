@@ -3,9 +3,9 @@ import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (الأذكى والأدق)' },
-  { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash (سريع ومتوازن)' },
-  { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash Exp (تجريبي)' }
+  { id: 'meta-llama/Llama-2-7b-chat-hf', name: 'Llama 2 7B (متوازن)' },
+  { id: 'mistralai/Mistral-7B-Instruct-v0.1', name: 'Mistral 7B (سريع)' },
+  { id: 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO', name: 'Nous Hermes 2 (قوي)' }
 ];
 
 type Source = {
@@ -44,7 +44,7 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-pro');
+  const [selectedModel, setSelectedModel] = useState('meta-llama/Llama-2-7b-chat-hf');
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;

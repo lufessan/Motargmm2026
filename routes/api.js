@@ -1,20 +1,24 @@
 import { Router } from 'express';
-import { GoogleGenAI } from '@google/genai';
+import { HfInference } from '@huggingface/inference';
 
 const router = Router();
 
-const ALLOWED_MODELS = ['gemini-1.5-pro', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-exp'];
+const ALLOWED_MODELS = [
+  'meta-llama/Llama-2-7b-chat-hf',
+  'mistralai/Mistral-7B-Instruct-v0.1',
+  'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+];
 
-function getAI() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured. Please set your free Gemini API key from https://aistudio.google.com/app/apikey');
+function getHF() {
+  const token = process.env.HUGGINGFACE_API_TOKEN;
+  if (!token) {
+    throw new Error('HUGGINGFACE_API_TOKEN is not configured. Get a free token from: https://huggingface.co/settings/tokens');
   }
-  return new GoogleGenAI({ apiKey });
+  return new HfInference(token);
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'gemini-1.5-pro';
+  return ALLOWED_MODELS.includes(model) ? model : 'meta-llama/Llama-2-7b-chat-hf';
 }
 
 router.get('/status', (req, res) => {
@@ -34,95 +38,62 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, withExplanation, translationDir, selectedModel: rawModel, files, history } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    const historyContents = (history || []).map(msg => {
-      const msgParts = [];
-      if (msg.role === 'user' && msg.files) {
-        msg.files.forEach(file => {
-          const base64Data = file.data.split(',')[1];
-          if (base64Data) {
-            msgParts.push({
-              inlineData: { data: base64Data, mimeType: file.type },
-            });
-          }
-        });
-      }
-      if (msg.text) {
-        msgParts.push({ text: msg.text });
-      }
-      if (msgParts.length === 0) {
-        msgParts.push({ text: ' ' });
-      }
-      return { role: msg.role, parts: msgParts };
-    });
-
-    const currentParts = [];
-    if (files && files.length > 0) {
-      files.forEach(file => {
-        const base64Data = file.data.split(',')[1];
-        if (base64Data) {
-          currentParts.push({
-            inlineData: { data: base64Data, mimeType: file.type },
-          });
-        }
-      });
-    }
-
-    let systemInstruction = '';
-    let promptText = '';
-    const tools = [{ googleSearch: {} }];
+    let systemPrompt = '';
+    let userMessage = '';
 
     if (activeTab === 'search') {
-      systemInstruction = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately using reputable international sources. 
+      systemPrompt = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately.
         ${withExplanation ? 'Provide a detailed, comprehensive explanation in Arabic.' : 'Provide a very concise, direct answer in Arabic WITHOUT any detailed explanation.'}`;
-      promptText = `Answer the following geographical query in Arabic:\n${input}`;
+      userMessage = `Answer the following geographical query in Arabic:\n${input}`;
     } else {
-      systemInstruction = `You are an expert geography teacher and translator. Your task is to translate geographical terms between English and Arabic. 
-        DO NOT provide literal translations like a standard translator. Provide the accurate, scientifically accepted geographical term in the target language.
-        ${withExplanation ? 'Provide the translation AND a detailed geographical explanation of the term in Arabic.' : 'Provide ONLY the translated term concisely, without any explanation.'}`;
-      promptText = `Translate the following geographical content from ${translationDir === 'en-ar' ? 'English to Arabic' : 'Arabic to English'}:\n${input}`;
+      systemPrompt = `You are an expert geography teacher and translator. Your task is to translate geographical terms between English and Arabic.
+        DO NOT provide literal translations. Provide the accurate, scientifically accepted geographical term in the target language.
+        ${withExplanation ? 'Provide the translation AND a detailed geographical explanation in Arabic.' : 'Provide ONLY the translated term concisely.'}`;
+      userMessage = `Translate the following geographical content from ${translationDir === 'en-ar' ? 'English to Arabic' : 'Arabic to English'}:\n${input}`;
     }
 
-    currentParts.push({ text: promptText });
-    const finalContents = [...historyContents, { role: 'user', parts: currentParts }];
-
-    const ai = getAI();
-    let response;
+    const hf = getHF();
 
     try {
-      response = await ai.models.generateContent({
+      const response = await hf.textGeneration({
         model: selectedModel,
-        contents: finalContents,
-        config: { systemInstruction, tools },
+        inputs: `${systemPrompt}\n\nUser: ${userMessage}`,
+        parameters: {
+          max_new_tokens: 500,
+          temperature: 0.7,
+          top_p: 0.9,
+        },
+      });
+
+      res.json({
+        text: response.generated_text || 'لم يتم الحصول على نتيجة.',
+        sources: undefined,
       });
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'gemini-1.5-pro' ? 'gemini-1.5-flash-latest' : 'gemini-1.5-pro';
-      response = await ai.models.generateContent({
+      const fallbackModel = selectedModel === 'meta-llama/Llama-2-7b-chat-hf' 
+        ? 'mistralai/Mistral-7B-Instruct-v0.1' 
+        : 'meta-llama/Llama-2-7b-chat-hf';
+      
+      const response = await hf.textGeneration({
         model: fallbackModel,
-        contents: finalContents,
-        config: { systemInstruction, tools },
+        inputs: `${systemPrompt}\n\nUser: ${userMessage}`,
+        parameters: {
+          max_new_tokens: 500,
+          temperature: 0.7,
+          top_p: 0.9,
+        },
+      });
+
+      res.json({
+        text: response.generated_text || 'لم يتم الحصول على نتيجة.',
+        sources: undefined,
       });
     }
-
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    const sources = [];
-    chunks.forEach(chunk => {
-      if (chunk.web?.uri && chunk.web?.title) {
-        sources.push({ uri: chunk.web.uri, title: chunk.web.title });
-      }
-    });
-
-    res.json({
-      text: response.text || 'لم يتم العثور على نتائج.',
-      sources: sources.length > 0 ? sources : undefined,
-    });
   } catch (error) {
     console.error('Chat API error:', error);
-    const is429 = error?.message?.includes('429') || error?.message?.includes('quota') || error?.status === 429;
-    res.status(is429 ? 429 : 500).json({
-      error: is429
-        ? 'عذراً، لقد تجاوزت الحد المسموح به للاستخدام (Quota Exceeded). يرجى المحاولة لاحقاً.'
-        : 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.',
+    res.status(500).json({
+      error: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.',
     });
   }
 });
@@ -132,6 +103,7 @@ router.post('/alternatives', async (req, res) => {
     const { originalInput, selectedModel: rawModel } = req.body;
     const selectedModel = validateModel(rawModel);
 
+    const hf = getHF();
     const prompt = `أعطني معاني وترجمات بديلة للنص التالي: "${originalInput}".
       يرجى تضمين:
       1. ترجمة حرفية.
@@ -139,21 +111,20 @@ router.post('/alternatives', async (req, res) => {
       3. المعنى بالعامية المصرية.
       اكتب الرد باختصار وتنسيق واضح في نقاط.`;
 
-    const ai = getAI();
-    const response = await ai.models.generateContent({
+    const response = await hf.textGeneration({
       model: selectedModel,
-      contents: prompt,
-      config: { systemInstruction: 'أنت خبير لغوي ومترجم محترف.' },
+      inputs: `أنت خبير لغوي ومترجم محترف.\n\nUser: ${prompt}`,
+      parameters: {
+        max_new_tokens: 500,
+        temperature: 0.7,
+      },
     });
 
-    res.json({ text: response.text });
+    res.json({ text: response.generated_text });
   } catch (error) {
     console.error('Alternatives API error:', error);
-    const is429 = error?.message?.includes('429') || error?.message?.includes('quota') || error?.status === 429;
-    res.status(is429 ? 429 : 500).json({
-      error: is429
-        ? 'عذراً، لقد تجاوزت الحد المسموح به للاستخدام (Quota Exceeded). يرجى المحاولة لاحقاً.'
-        : 'حدث خطأ أثناء جلب المعاني الإضافية.',
+    res.status(500).json({
+      error: 'حدث خطأ أثناء جلب المعاني الإضافية.',
     });
   }
 });
