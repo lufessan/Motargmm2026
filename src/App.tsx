@@ -308,9 +308,9 @@ export default function App() {
                         <img src="/user-emoji.png" alt="المستخدم" className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden shadow-[0_0_12px_rgba(59,130,246,0.5)] flex items-center justify-center bg-black">
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center">
                         <img 
-                          src="/earth-animated.gif" 
+                          src="/ai-emoji.png" 
                           alt="AI" 
                           className="w-full h-full object-cover"
                         />
