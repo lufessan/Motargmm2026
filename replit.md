@@ -25,10 +25,28 @@ A React + Vite frontend application for geographic search and translation using 
 - `GEMINI_API_KEY` - Required for Gemini AI API calls
 
 ## Running the App
+
+### Frontend (dev)
 ```bash
 npm run dev
 ```
 Runs on `http://0.0.0.0:5000`
+
+### Backend API (dev)
+```bash
+npm run start:dev
+```
+Runs on `http://localhost:3001`
+
+### Production (serves both API + built frontend)
+```bash
+npm run build && npm start
+```
+Runs on `http://0.0.0.0:PORT`
+
+## API Endpoints
+- `GET /api/status` → `{ "status": "running" }`
+- `GET /api/health` → `{ "status": "ok", "uptime": ..., "timestamp": ... }`
 
 ## Features
 - **Geographic Search**: Ask questions about geography, answered using Gemini AI with Google Search grounding
