@@ -304,8 +304,8 @@ export default function App() {
                   
                   <div className="shrink-0 mt-1">
                     {msg.role === 'user' ? (
-                      <div className="w-8 h-8 rounded-full bg-blue-600/50 flex items-center justify-center border border-blue-400/30">
-                        <User size={16} className="text-white" />
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border border-yellow-400/50 shadow-[0_0_8px_rgba(234,179,8,0.3)]">
+                        <img src="/user-emoji.png" alt="المستخدم" className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-8 h-8 rounded-full overflow-hidden shadow-[0_0_10px_rgba(59,130,246,0.4)] flex items-center justify-center bg-black border border-blue-400/50">
