@@ -59,7 +59,7 @@ router.get('/health', (req, res) => {
 
 router.post('/chat', async (req, res) => {
   try {
-    const { input, activeTab, translationDir, selectedModel: rawModel, files } = req.body;
+    const { input, activeTab, translationDir, withExplanation, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
     let textToProcess = input.substring(0, 200);
@@ -83,9 +83,17 @@ router.post('/chat', async (req, res) => {
       prompt = `أجب على هذا السؤال الجغرافي باللغة العربية باختصار: ${textToProcess}`;
     } else {
       if (translationDir === 'en-ar') {
-        prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+        if (withExplanation) {
+          prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين، ثم أضف شرحاً تفصيلياً للمصطلح باللغة العربية.\n\nمثال:\nlandform = أشكال سطح الأرض (التضاريس)\nالشرح: هي الأشكال والمعالم الطبيعية التي تتكون على سطح الأرض نتيجة العوامل الداخلية كالبراكين والزلازل والعوامل الخارجية كالتعرية والترسيب، وتشمل الجبال والسهول والهضاب والوديان.\n\nالمصطلح: ${textToProcess}\nالترجمة والشرح:`;
+        } else {
+          prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+        }
       } else {
-        prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations.\n\nTerm: ${textToProcess}\nTranslation:`;
+        if (withExplanation) {
+          prompt = `You are an expert geographic translator. Translate the following Arabic geographic term to English with a clear explanation.\n\nExample:\nالتضاريس = Landforms\nExplanation: Natural features of the Earth's surface formed by internal forces like volcanoes and earthquakes, and external forces like erosion and deposition.\n\nTerm: ${textToProcess}\nTranslation and Explanation:`;
+        } else {
+          prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations.\n\nTerm: ${textToProcess}\nTranslation:`;
+        }
       }
     }
 
