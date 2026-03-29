@@ -3,23 +3,18 @@ import { GoogleGenAI } from '@google/genai';
 
 const router = Router();
 
-const ALLOWED_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview'];
+const ALLOWED_MODELS = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'];
 
 function getAI() {
-  if (!process.env.AI_INTEGRATIONS_GEMINI_API_KEY || !process.env.AI_INTEGRATIONS_GEMINI_BASE_URL) {
-    throw new Error('AI Integrations environment variables are not configured.');
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured. Please set your free Gemini API key from https://aistudio.google.com/app/apikey');
   }
-  return new GoogleGenAI({
-    apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-    httpOptions: {
-      apiVersion: "",
-      baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-    },
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'gemini-2.5-flash';
+  return ALLOWED_MODELS.includes(model) ? model : 'gemini-2.0-flash';
 }
 
 router.get('/status', (req, res) => {
@@ -101,7 +96,7 @@ router.post('/chat', async (req, res) => {
       });
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'gemini-2.5-flash' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+      const fallbackModel = selectedModel === 'gemini-2.0-flash' ? 'gemini-1.5-flash' : 'gemini-2.0-flash';
       response = await ai.models.generateContent({
         model: fallbackModel,
         contents: finalContents,
