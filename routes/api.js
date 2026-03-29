@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 
 const router = Router();
 
-const ALLOWED_MODELS = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'];
+const ALLOWED_MODELS = ['gemini-1.5-pro', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-exp'];
 
 function getAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -14,7 +14,7 @@ function getAI() {
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'gemini-2.0-flash';
+  return ALLOWED_MODELS.includes(model) ? model : 'gemini-1.5-pro';
 }
 
 router.get('/status', (req, res) => {
@@ -96,7 +96,7 @@ router.post('/chat', async (req, res) => {
       });
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'gemini-2.0-flash' ? 'gemini-1.5-flash' : 'gemini-2.0-flash';
+      const fallbackModel = selectedModel === 'gemini-1.5-pro' ? 'gemini-1.5-flash-latest' : 'gemini-1.5-pro';
       response = await ai.models.generateContent({
         model: fallbackModel,
         contents: finalContents,
