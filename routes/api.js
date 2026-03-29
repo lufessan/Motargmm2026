@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { HfInference } from '@huggingface/inference';
 import Tesseract from 'tesseract.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 
 const router = Router();
 
@@ -36,14 +39,37 @@ async function extractTextFromImage(imageBase64) {
   }
 }
 
+async function extractTextFromPDF(pdfBase64) {
+  try {
+    const base64Data = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const data = await pdf(buffer);
+    return data.text.substring(0, 1000);
+  } catch (error) {
+    console.error('PDF Error:', error);
+    throw new Error('Failed to extract text from PDF');
+  }
+}
+
+async function extractTextFromFile(fileData, fileType) {
+  if (fileType === 'application/pdf') {
+    return await extractTextFromPDF(fileData);
+  } else if (fileType.startsWith('image/')) {
+    return await extractTextFromImage(fileData);
+  }
+  return null;
+}
+
 async function callModel(hf, model, prompt) {
   const result = await hf.chatCompletion({
     model: model,
     messages: [{ role: 'user', content: prompt }],
-    max_tokens: 300,
+    max_tokens: 500,
   });
   return result.choices?.[0]?.message?.content || '';
 }
+
+const NO_CHINESE = 'تحذير مهم: يجب أن يكون الرد بالعربية فقط. لا تستخدم أي لغة أخرى غير العربية والإنجليزية. ممنوع الصينية أو أي لغة آسيوية.';
 
 router.get('/status', (req, res) => {
   res.json({ status: 'running' });
@@ -62,17 +88,19 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, translationDir, withExplanation, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    let textToProcess = input.substring(0, 200);
+    let textToProcess = input.substring(0, 500);
 
     if (files && files.length > 0 && activeTab === 'translate') {
-      console.log('Processing image for OCR...');
+      console.log('Processing file...');
       try {
-        const imageData = files[0].data;
-        const extractedText = await extractTextFromImage(imageData);
-        textToProcess = extractedText || textToProcess;
-        console.log('Extracted text:', textToProcess);
-      } catch (ocrError) {
-        console.error('OCR failed, using input text instead:', ocrError);
+        const file = files[0];
+        const extractedText = await extractTextFromFile(file.data, file.type);
+        if (extractedText) {
+          textToProcess = extractedText;
+          console.log('Extracted text:', textToProcess.substring(0, 100));
+        }
+      } catch (fileError) {
+        console.error('File processing failed, using input text instead:', fileError);
       }
     }
 
@@ -80,19 +108,19 @@ router.post('/chat', async (req, res) => {
     let prompt = '';
 
     if (activeTab === 'search') {
-      prompt = `أجب على هذا السؤال الجغرافي باللغة العربية باختصار: ${textToProcess}`;
+      prompt = `${NO_CHINESE}\n\nأجب على هذا السؤال الجغرافي باللغة العربية باختصار: ${textToProcess}`;
     } else {
       if (translationDir === 'en-ar') {
         if (withExplanation) {
-          prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين، ثم أضف شرحاً تفصيلياً للمصطلح باللغة العربية.\n\nمثال:\nlandform = أشكال سطح الأرض (التضاريس)\nالشرح: هي الأشكال والمعالم الطبيعية التي تتكون على سطح الأرض نتيجة العوامل الداخلية كالبراكين والزلازل والعوامل الخارجية كالتعرية والترسيب، وتشمل الجبال والسهول والهضاب والوديان.\n\nالمصطلح: ${textToProcess}\nالترجمة والشرح:`;
+          prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين، ثم أضف شرحاً تفصيلياً للمصطلح باللغة العربية فقط.\n\nمثال:\nlandform = أشكال سطح الأرض (التضاريس)\nالشرح: هي الأشكال والمعالم الطبيعية التي تتكون على سطح الأرض نتيجة العوامل الداخلية كالبراكين والزلازل والعوامل الخارجية كالتعرية والترسيب، وتشمل الجبال والسهول والهضاب والوديان.\n\nالمصطلح: ${textToProcess}\nالترجمة والشرح:`;
         } else {
-          prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+          prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
         }
       } else {
         if (withExplanation) {
-          prompt = `You are an expert geographic translator. Translate the following Arabic geographic term to English with a clear explanation.\n\nExample:\nالتضاريس = Landforms\nExplanation: Natural features of the Earth's surface formed by internal forces like volcanoes and earthquakes, and external forces like erosion and deposition.\n\nTerm: ${textToProcess}\nTranslation and Explanation:`;
+          prompt = `You are an expert geographic translator. Translate the following Arabic geographic term to English with a clear explanation. Answer ONLY in English and Arabic, no other languages.\n\nExample:\nالتضاريس = Landforms\nExplanation: Natural features of the Earth's surface formed by internal forces like volcanoes and earthquakes, and external forces like erosion and deposition.\n\nTerm: ${textToProcess}\nTranslation and Explanation:`;
         } else {
-          prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations.\n\nTerm: ${textToProcess}\nTranslation:`;
+          prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations. Answer ONLY in English, no other languages.\n\nTerm: ${textToProcess}\nTranslation:`;
         }
       }
     }
@@ -107,6 +135,8 @@ router.post('/chat', async (req, res) => {
         : 'Qwen/Qwen2.5-72B-Instruct';
       responseText = await callModel(hf, fallbackModel, prompt);
     }
+
+    responseText = responseText.replace(/[\u4e00-\u9fff\u3400-\u4dbf\u{20000}-\u{2a6df}\u{2a700}-\u{2b73f}\u{2b740}-\u{2b81f}\u{2b820}-\u{2ceaf}\u{2ceb0}-\u{2ebef}\u{30000}-\u{3134f}\u3000-\u303f\uff00-\uffef]/gu, '').trim();
 
     res.json({
       text: responseText || 'لم يتم الحصول على نتيجة.',
@@ -127,13 +157,15 @@ router.post('/alternatives', async (req, res) => {
     const textToProcess = originalInput.substring(0, 200);
 
     const hf = getHF();
+    let prompt;
     if (translationDir === 'en-ar') {
-      var prompt = `أعط ترجمتين بديلتين للمصطلح الجغرافي التالي إلى العربية. أعط الترجمات فقط بدون شرح، كل ترجمة في سطر:\n\n${textToProcess}`;
+      prompt = `${NO_CHINESE}\n\nأعط ترجمتين بديلتين للمصطلح الجغرافي التالي إلى العربية. أعط الترجمات فقط بدون شرح، كل ترجمة في سطر:\n\n${textToProcess}`;
     } else {
-      var prompt = `Give 2 alternative English translations for this Arabic geographic term. Give only translations, each on a new line:\n\n${textToProcess}`;
+      prompt = `Give 2 alternative English translations for this Arabic geographic term. Give only translations, each on a new line. No Chinese or other languages:\n\n${textToProcess}`;
     }
 
-    const responseText = await callModel(hf, selectedModel, prompt);
+    let responseText = await callModel(hf, selectedModel, prompt);
+    responseText = responseText.replace(/[\u4e00-\u9fff\u3400-\u4dbf\u{20000}-\u{2a6df}\u{2a700}-\u{2b73f}\u{2b740}-\u{2b81f}\u{2b820}-\u{2ceaf}\u{2ceb0}-\u{2ebef}\u{30000}-\u{3134f}\u3000-\u303f\uff00-\uffef]/gu, '').trim();
 
     res.json({ text: responseText || 'لم يتم الحصول على ترجمات بديلة.' });
   } catch (error) {
