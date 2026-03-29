@@ -63,3 +63,8 @@ deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 publicDir = "dist"
 run = ["node", "server.js"]
+
+[userenv]
+
+[userenv.shared]
+HUGGINGFACE_API_TOKEN = "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"

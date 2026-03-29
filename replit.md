@@ -8,7 +8,8 @@ A React + Vite frontend application for geographic search and translation using 
 - **Build Tool**: Vite 6
 - **Backend**: Express.js (Node.js)
 - **AI**: Hugging Face Inference API (chatCompletion)
-- **OCR**: Tesseract.js (English + Arabic text extraction from images)
+- **Image Understanding**: Gemini 2.5 Flash via Replit AI Integrations (vision-based text extraction from images)
+- **PDF Parsing**: pdf-parse v2 (PDFParse class API)
 - **UI Libraries**: lucide-react, react-markdown, motion
 
 ## Project Structure
@@ -28,6 +29,8 @@ A React + Vite frontend application for geographic search and translation using 
 
 ## Environment Variables
 - `HUGGINGFACE_API_TOKEN` - Hugging Face API token for inference
+- `AI_INTEGRATIONS_GEMINI_API_KEY` - Auto-configured by Replit AI Integrations (do NOT modify)
+- `AI_INTEGRATIONS_GEMINI_BASE_URL` - Auto-configured by Replit AI Integrations (do NOT modify)
 
 ## Available Models
 - `Qwen/Qwen2.5-72B-Instruct` - Most accurate (default)
@@ -65,8 +68,8 @@ Runs on `http://0.0.0.0:PORT`
 ## Features
 - **Geographic Search**: Ask questions about geography in Arabic
 - **Geographic Translator**: Translate geographic terms between English and Arabic with scientific accuracy
-- **OCR Support**: Extract text from uploaded images (English + Arabic) via Tesseract.js
-- **PDF Support**: Extract text from uploaded PDF files via pdf-parse
+- **Image Understanding**: Extract text from uploaded images using Gemini Vision AI (replaces Tesseract.js OCR for much better accuracy)
+- **PDF Support**: Extract text from uploaded PDF files via pdf-parse v2 (PDFParse class: load → getText → destroy)
 - RTL (right-to-left) layout for Arabic support
 - File upload support (images + PDFs)
 - Multi-model selection
@@ -88,3 +91,5 @@ Configured as autoscale deployment:
 - Vite proxies `/api/*` to `http://localhost:3001` in development
 - All AI calls go through the backend - no API keys exposed to frontend
 - Uses `hf.chatCompletion()` - NOT `hf.conversational()` (deprecated/removed in v4)
+- Image text extraction uses Gemini Vision (GoogleGenAI from @google/genai) with inline base64 data
+- PDF parsing uses PDFParse class API (pdf-parse v2): constructor → load(buffer) → getText() → destroy() with proper cleanup in finally block
