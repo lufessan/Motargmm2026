@@ -3,7 +3,8 @@ import { HfInference } from '@huggingface/inference';
 import Tesseract from 'tesseract.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const { PDFParse } = require('pdf-parse');
+const pdfParseModule = require('pdf-parse');
+const { PDFParse } = pdfParseModule;
 
 const router = Router();
 
@@ -43,8 +44,8 @@ async function extractTextFromPDF(pdfBase64) {
   try {
     const base64Data = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const parser = new PDFParse({ verbosity: 0, data: buffer });
-    await parser.load();
+    const parser = new PDFParse({ verbosity: 0 });
+    await parser.load(buffer);
     const result = await parser.getText();
     parser.destroy();
     const text = typeof result === 'object' ? result.text : result;
