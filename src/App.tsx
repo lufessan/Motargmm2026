@@ -238,7 +238,7 @@ export default function App() {
   };
 
   return (
-    <div dir="rtl" className={`min-h-screen flex flex-col relative z-0 h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'text-white bg-black' : 'text-gray-900 bg-white'}`} style={{ fontFamily: "'Cairo', sans-serif" }}>
+    <div dir="rtl" className={`min-h-screen flex flex-col relative z-0 h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'text-white bg-black' : 'text-gray-900 bg-black'}`} style={{ fontFamily: "'Cairo', sans-serif" }}>
       
       <video
         autoPlay
@@ -247,16 +247,16 @@ export default function App() {
         playsInline
         preload="metadata"
         poster="/sea-waves-poster.jpg"
-        className={`fixed inset-0 w-full h-full object-cover -z-10 motion-reduce:hidden transition-opacity duration-500 ${isDark ? 'opacity-70' : 'opacity-40'}`}
+        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 motion-reduce:hidden"
       >
         <source src="/sea-waves-bg.mp4" type="video/mp4" />
       </video>
       <img
         src="/sea-waves-poster.jpg"
         alt=""
-        className={`fixed inset-0 w-full h-full object-cover -z-10 hidden motion-reduce:block transition-opacity duration-500 ${isDark ? 'opacity-70' : 'opacity-40'}`}
+        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 hidden motion-reduce:block"
       />
-      <div className={`fixed inset-0 -z-10 transition-all duration-500 ${isDark ? 'bg-gradient-to-b from-black/40 via-transparent to-black/60' : 'bg-gradient-to-b from-white/60 via-white/30 to-white/70'}`} />
+      <div className={`fixed inset-0 -z-10 transition-all duration-500 ${isDark ? 'bg-gradient-to-b from-black/40 via-transparent to-black/60' : 'bg-gradient-to-b from-black/20 via-transparent to-black/30'}`} />
 
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
