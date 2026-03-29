@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
-import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
+import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
   { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B (الأدق)' },
@@ -45,6 +45,7 @@ export default function App() {
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
+  const [isDark, setIsDark] = useState(true);
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;
@@ -237,7 +238,7 @@ export default function App() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen text-white flex flex-col relative z-0 h-screen overflow-hidden bg-black" style={{ fontFamily: "'Cairo', sans-serif" }}>
+    <div dir="rtl" className={`min-h-screen flex flex-col relative z-0 h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'text-white bg-black' : 'text-gray-900 bg-white'}`} style={{ fontFamily: "'Cairo', sans-serif" }}>
       
       <video
         autoPlay
@@ -246,21 +247,21 @@ export default function App() {
         playsInline
         preload="metadata"
         poster="/sea-waves-poster.jpg"
-        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 motion-reduce:hidden"
+        className={`fixed inset-0 w-full h-full object-cover -z-10 motion-reduce:hidden transition-opacity duration-500 ${isDark ? 'opacity-70' : 'opacity-40'}`}
       >
         <source src="/sea-waves-bg.mp4" type="video/mp4" />
       </video>
       <img
         src="/sea-waves-poster.jpg"
         alt=""
-        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 hidden motion-reduce:block"
+        className={`fixed inset-0 w-full h-full object-cover -z-10 hidden motion-reduce:block transition-opacity duration-500 ${isDark ? 'opacity-70' : 'opacity-40'}`}
       />
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 -z-10" />
+      <div className={`fixed inset-0 -z-10 transition-all duration-500 ${isDark ? 'bg-gradient-to-b from-black/40 via-transparent to-black/60' : 'bg-gradient-to-b from-white/60 via-white/30 to-white/70'}`} />
 
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
         <header className={`flex flex-col items-center shrink-0 transition-all duration-500 ${currentMessages.length > 0 ? 'mb-2 md:mb-6' : 'mb-6'}`}>
-          <h1 className={`font-extrabold drop-shadow-lg text-white flex items-center justify-center gap-3 transition-all duration-500 ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
+          <h1 className={`font-extrabold drop-shadow-lg flex items-center justify-center gap-3 transition-all duration-500 ${isDark ? 'text-white' : 'text-gray-800'} ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
             <img 
               src="/book-mascot.png" 
               alt="شعار جيو ماستر" 
@@ -269,13 +270,17 @@ export default function App() {
             جيو ماستر
           </h1>
           
-          <div className={`flex gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
+          <div className={`flex items-center gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
             <button
               onClick={() => setActiveTab('search')}
               className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
                 activeTab === 'search' 
-                  ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105' 
-                  : 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                  ? isDark
+                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
+                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
+                  : isDark
+                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
               <Search size={18} className="md:w-[20px] md:h-[20px]" />
@@ -285,12 +290,28 @@ export default function App() {
               onClick={() => setActiveTab('translate')}
               className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
                 activeTab === 'translate' 
-                  ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105' 
-                  : 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                  ? isDark
+                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
+                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
+                  : isDark
+                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
               <Languages size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>المترجم الجغرافي</span>
+            </button>
+            
+            <button
+              onClick={() => setIsDark(prev => !prev)}
+              className={`glass-tab p-2.5 md:p-3 rounded-2xl transition-all duration-300 border-2 ${
+                isDark
+                  ? 'bg-white/10 border-white/20 text-yellow-300 hover:bg-white/20 hover:border-yellow-400/40 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                  : 'bg-white/50 border-gray-300/50 text-indigo-600 hover:bg-white/70 hover:border-indigo-300/50 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
+              }`}
+              title={isDark ? 'الوضع الفاتح' : 'الوضع الغامق'}
+            >
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
           </div>
         </header>
@@ -300,7 +321,7 @@ export default function App() {
             <div className="flex-grow flex flex-col items-center justify-center text-center opacity-70">
               <img src="/book-mascot.png" alt="جيو ماستر" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] mb-4 object-contain" />
               <h2 className="text-2xl font-semibold mb-2">مرحباً بك في جيو ماستر</h2>
-              <p className="text-gray-300 max-w-md">
+              <p className={`max-w-md transition-colors duration-500 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                 {activeTab === 'search' 
                   ? 'اطرح أي سؤال جغرافي وسأقوم بالبحث في المصادر الموثوقة للإجابة عليه.' 
                   : 'أدخل أي مصطلح جغرافي لترجمته بدقة علمية بين العربية والإنجليزية.'}
@@ -329,8 +350,12 @@ export default function App() {
 
                   <div className={`p-4 md:p-5 relative transition-all duration-300 rounded-2xl md:rounded-3xl ${
                       msg.role === 'user'
-                        ? 'msg-bubble-user bg-gradient-to-br from-blue-900/50 via-blue-800/30 to-cyan-900/40 border border-blue-400/20 shadow-[0_8px_32px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
-                        : 'msg-bubble-ai bg-gradient-to-br from-slate-800/50 via-gray-800/30 to-slate-900/40 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.08),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
+                        ? isDark
+                          ? 'msg-bubble-user bg-gradient-to-br from-blue-900/50 via-blue-800/30 to-cyan-900/40 border border-blue-400/20 shadow-[0_8px_32px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
+                          : 'msg-bubble-user bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 border border-teal-200/60 shadow-[0_8px_32px_rgba(20,184,166,0.1),inset_0_1px_0_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.05)] backdrop-blur-md md:backdrop-blur-xl'
+                        : isDark
+                          ? 'msg-bubble-ai bg-gradient-to-br from-slate-800/50 via-gray-800/30 to-slate-900/40 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.08),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
+                          : 'msg-bubble-ai bg-gradient-to-br from-white via-gray-50 to-slate-50 border border-gray-200/60 shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9),0_2px_4px_rgba(0,0,0,0.04)] backdrop-blur-md md:backdrop-blur-xl'
                     }`}>
                     {msg.files && msg.files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -363,21 +388,21 @@ export default function App() {
                         <div className="h-3 bg-blue-500/20 rounded w-4/6"></div>
                       </div>
                     ) : (
-                      <div className="markdown-body text-gray-100 prose prose-invert max-w-none text-right text-sm md:text-base leading-relaxed" dir="rtl">
+                      <div className={`markdown-body max-w-none text-right text-sm md:text-base leading-relaxed transition-colors duration-500 ${isDark ? 'text-gray-100 prose prose-invert' : 'text-gray-800 prose'}`} dir="rtl">
                         <Markdown>{msg.text}</Markdown>
                       </div>
                     )}
 
                     {msg.showAlternatives && (
-                      <div className="mt-4 pt-3 border-t border-white/10">
-                        <h4 className="text-sm font-semibold text-blue-300 mb-2">معاني وترجمات أخرى:</h4>
+                      <div className={`mt-4 pt-3 border-t ${isDark ? 'border-white/10' : 'border-gray-200/60'}`}>
+                        <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-blue-300' : 'text-teal-600'}`}>معاني وترجمات أخرى:</h4>
                         {msg.loadingAlternatives ? (
                           <div className="space-y-2 animate-pulse" dir="rtl">
-                            <div className="h-2 bg-blue-500/20 rounded w-3/4"></div>
-                            <div className="h-2 bg-blue-500/20 rounded w-1/2"></div>
+                            <div className={`h-2 rounded w-3/4 ${isDark ? 'bg-blue-500/20' : 'bg-teal-500/20'}`}></div>
+                            <div className={`h-2 rounded w-1/2 ${isDark ? 'bg-blue-500/20' : 'bg-teal-500/20'}`}></div>
                           </div>
                         ) : (
-                          <div className="markdown-body text-gray-300 prose prose-invert max-w-none text-right text-sm leading-relaxed" dir="rtl">
+                          <div className={`markdown-body max-w-none text-right text-sm leading-relaxed ${isDark ? 'text-gray-300 prose prose-invert' : 'text-gray-600 prose'}`} dir="rtl">
                             <Markdown>{msg.alternatives || ''}</Markdown>
                           </div>
                         )}
@@ -385,10 +410,14 @@ export default function App() {
                     )}
 
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-white/10">
+                      <div className={`mt-4 pt-3 border-t ${isDark ? 'border-white/10' : 'border-gray-200/60'}`}>
                         <button 
                           onClick={() => toggleSources(msg.id)}
-                          className="flex items-center gap-2 text-xs text-blue-300 hover:text-blue-200 transition-colors bg-blue-900/20 px-3 py-1.5 rounded-full border border-blue-500/20"
+                          className={`flex items-center gap-2 text-xs transition-colors px-3 py-1.5 rounded-full border ${
+                            isDark 
+                              ? 'text-blue-300 hover:text-blue-200 bg-blue-900/20 border-blue-500/20' 
+                              : 'text-teal-600 hover:text-teal-700 bg-teal-50 border-teal-200/50'
+                          }`}
                         >
                           <LinkIcon size={14} />
                           {msg.showSources ? 'إخفاء المصادر' : 'عرض المصادر'}
@@ -402,7 +431,11 @@ export default function App() {
                                 href={src.uri} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="text-xs text-gray-300 hover:text-blue-300 truncate block bg-black/20 p-2 rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors"
+                                className={`text-xs truncate block p-2 rounded-lg border transition-colors ${
+                                  isDark 
+                                    ? 'text-gray-300 hover:text-blue-300 bg-black/20 border-white/5 hover:border-blue-500/30' 
+                                    : 'text-gray-600 hover:text-teal-600 bg-gray-50 border-gray-200/50 hover:border-teal-300/50'
+                                }`}
                               >
                                 • {src.title || src.uri}
                               </a>
@@ -434,118 +467,156 @@ export default function App() {
         <div className="shrink-0 mt-2 flex flex-col items-center">
           
           <div className="w-full max-w-2xl flex flex-col items-center relative z-20">
-            <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-t-xl px-3 py-1 hover:bg-white/5 transition-colors shadow-lg mb-[-1px] border-b-0">
-              <Bot size={14} className="text-blue-400" />
-              <div className="relative">
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="bg-transparent text-[10px] md:text-xs text-gray-300 outline-none cursor-pointer appearance-none pr-1 pl-5"
-                  style={{ direction: 'rtl' }}
-                >
-                  {AVAILABLE_MODELS.map(m => (
-                    <option key={m.id} value={m.id} className="bg-gray-900 text-white">{m.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={10} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none rotate-180" />
-              </div>
-            </div>
-
-            <div className="w-full relative bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl md:rounded-[2rem] shadow-[0_0_20px_rgba(59,130,246,0.15)] focus-within:shadow-[0_0_30px_rgba(59,130,246,0.3)] focus-within:border-blue-500/50 transition-all duration-300 p-1.5 flex items-end gap-1.5">
-              
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                multiple
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                className="hidden"
-                id="chat-file-upload"
-              />
-              <label
-                htmlFor="chat-file-upload"
-                className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10 cursor-pointer shrink-0 mb-0.5"
-                title="إرفاق صور أو ملفات PDF"
-              >
-                <Upload size={18} />
-              </label>
-              
-              <div className="flex-grow relative flex flex-col justify-center min-h-[40px]">
-                {fileData.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-1.5 mt-1.5 self-start px-1">
-                    {fileData.map((file, idx) => (
-                      <div key={idx} className="relative inline-flex items-center gap-1.5 bg-black/40 p-1 rounded-lg border border-white/20 pr-6">
-                        {file.type.startsWith('image/') ? (
-                          <img src={file.data} alt={`Preview ${idx + 1}`} className="h-7 w-7 object-cover rounded border border-white/10" />
-                        ) : (
-                          <div className="h-7 w-7 flex flex-col items-center justify-center bg-red-500/20 rounded text-red-400 border border-red-500/20">
-                            <FileText size={12} />
-                          </div>
-                        )}
-                        <span className="text-[10px] max-w-[60px] truncate text-gray-300" dir="ltr">{file.name}</span>
-                        <button
-                          onClick={() => removeFile(idx)}
-                          className="absolute top-1/2 -translate-y-1/2 right-1 bg-red-500/80 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
-                        >
-                          <X size={8} />
-                        </button>
-                      </div>
-                    ))}
+            
+            <div className={`w-full relative rounded-3xl transition-all duration-500 p-[2px] ${
+              isDark 
+                ? 'bg-gradient-to-br from-teal-400/40 via-blue-500/30 to-purple-500/40' 
+                : 'bg-gradient-to-br from-teal-400/60 via-cyan-400/40 to-blue-400/60'
+            }`}>
+              <div className={`w-full rounded-[22px] transition-all duration-500 ${
+                isDark 
+                  ? 'bg-gray-900/90 backdrop-blur-xl' 
+                  : 'bg-white/85 backdrop-blur-xl'
+              }`}>
+                
+                <div className={`flex items-center gap-2 px-4 py-2 border-b transition-colors duration-500 ${
+                  isDark ? 'border-white/10' : 'border-gray-200/60'
+                }`}>
+                  <Bot size={14} className={isDark ? 'text-teal-400' : 'text-teal-600'} />
+                  <div className="relative">
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className={`bg-transparent text-[10px] md:text-xs outline-none cursor-pointer appearance-none pr-1 pl-5 font-medium transition-colors duration-500 ${
+                        isDark ? 'text-gray-300' : 'text-gray-600'
+                      }`}
+                      style={{ direction: 'rtl', fontFamily: "'Cairo', sans-serif" }}
+                    >
+                      {AVAILABLE_MODELS.map(m => (
+                        <option key={m.id} value={m.id} className={isDark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>{m.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={10} className={`absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none rotate-180 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                   </div>
-                )}
-                <textarea
-                  ref={textareaRef}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : "أدخل المصطلح للترجمة..."}
-                  className="w-full bg-transparent border-none outline-none resize-none text-white placeholder-gray-400 py-2 px-1 text-sm md:text-base leading-relaxed scrollbar-hide"
-                  rows={1}
-                  style={{ minHeight: '40px' }}
-                />
-              </div>
 
-              <button
-                onClick={handleSubmit}
-                disabled={loading || (!inputText.trim() && selectedFiles.length === 0)}
-                className="relative group disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0.5 mr-0.5"
-                title="إرسال"
-              >
-                <div className="absolute inset-0 bg-yellow-500 rounded-full blur-lg opacity-30 group-hover:opacity-60 transition-opacity"></div>
-                <div className="w-10 h-10 relative z-10 flex items-center justify-center">
-                  <img 
-                    src="/book-mascot.png" 
-                    alt="إرسال" 
-                    className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
-                  />
+                  <div className="flex-grow" />
+
+                  <div className="flex items-center gap-2">
+                    <label className={`flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-300 ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 text-gray-300' 
+                        : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={withExplanation}
+                        onChange={(e) => setWithExplanation(e.target.checked)}
+                        className="w-3 h-3 accent-teal-500"
+                      />
+                      مع الشرح
+                    </label>
+
+                    {activeTab === 'translate' && (
+                      <button
+                        onClick={() => setTranslationDir(prev => prev === 'en-ar' ? 'ar-en' : 'en-ar')}
+                        className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-300 ${
+                          isDark 
+                            ? 'bg-white/5 hover:bg-white/10 text-gray-300' 
+                            : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600'
+                        }`}
+                      >
+                        {translationDir === 'en-ar' ? 'EN → AR' : 'AR → EN'}
+                        <ArrowRightLeft size={11} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </button>
+
+                <div className="px-4 py-2">
+                  {fileData.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {fileData.map((file, idx) => (
+                        <div key={idx} className={`relative inline-flex items-center gap-2 p-1.5 rounded-xl border pr-7 transition-colors duration-500 ${
+                          isDark 
+                            ? 'bg-white/5 border-white/15' 
+                            : 'bg-gray-100/80 border-gray-200/80'
+                        }`}>
+                          {file.type.startsWith('image/') ? (
+                            <img src={file.data} alt={`Preview ${idx + 1}`} className="h-8 w-8 object-cover rounded-lg border border-white/10" />
+                          ) : (
+                            <div className="h-8 w-8 flex flex-col items-center justify-center bg-red-500/15 rounded-lg text-red-400 border border-red-500/20">
+                              <FileText size={14} />
+                            </div>
+                          )}
+                          <span className={`text-[10px] max-w-[70px] truncate ${isDark ? 'text-gray-300' : 'text-gray-600'}`} dir="ltr">{file.name}</span>
+                          <button
+                            onClick={() => removeFile(idx)}
+                            className="absolute top-1/2 -translate-y-1/2 right-1.5 bg-red-500/80 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-end gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      multiple
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="chat-file-upload"
+                    />
+                    <label
+                      htmlFor="chat-file-upload"
+                      className={`p-2 transition-all duration-300 rounded-xl cursor-pointer shrink-0 mb-0.5 ${
+                        isDark 
+                          ? 'text-gray-400 hover:text-teal-300 hover:bg-white/10' 
+                          : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50'
+                      }`}
+                      title="إرفاق صور أو ملفات PDF"
+                    >
+                      <Paperclip size={20} />
+                    </label>
+
+                    <textarea
+                      ref={textareaRef}
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : "أدخل المصطلح للترجمة..."}
+                      className={`flex-grow bg-transparent border-none outline-none resize-none py-2 px-1 text-sm md:text-base leading-relaxed scrollbar-hide transition-colors duration-500 ${
+                        isDark 
+                          ? 'text-white placeholder-gray-500' 
+                          : 'text-gray-800 placeholder-gray-400'
+                      }`}
+                      rows={1}
+                      style={{ minHeight: '40px', fontFamily: "'Cairo', sans-serif" }}
+                    />
+
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading || (!inputText.trim() && selectedFiles.length === 0)}
+                      className={`group p-2.5 rounded-xl transition-all duration-300 shrink-0 mb-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                        isDark
+                          ? 'bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white shadow-[0_4px_15px_rgba(20,184,166,0.3)] hover:shadow-[0_6px_20px_rgba(20,184,166,0.5)]'
+                          : 'bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white shadow-[0_4px_15px_rgba(20,184,166,0.25)] hover:shadow-[0_6px_20px_rgba(20,184,166,0.4)]'
+                      }`}
+                      title="إرسال"
+                    >
+                      <Send size={20} className="rotate-180 group-hover:scale-110 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-3 mb-1 px-2">
-            <label className="flex items-center gap-2 cursor-pointer bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
-              <input
-                type="checkbox"
-                checked={withExplanation}
-                onChange={(e) => setWithExplanation(e.target.checked)}
-                className="w-3 h-3 accent-blue-500"
-              />
-              <span className="text-[10px] md:text-xs font-medium text-gray-200">مع الشرح</span>
-            </label>
-
-            {activeTab === 'translate' && (
-              <button
-                onClick={() => setTranslationDir(prev => prev === 'en-ar' ? 'ar-en' : 'en-ar')}
-                className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 hover:bg-white/10 transition-colors text-[10px] md:text-xs font-medium text-gray-200"
-              >
-                {translationDir === 'en-ar' ? 'الإنجليزية ← العربية' : 'العربية ← الإنجليزية'}
-                <ArrowRightLeft size={12} />
-              </button>
-            )}
-          </div>
-          <div className="text-center mt-2">
-            <span className="text-[10px] text-gray-500">قد يعرض جيو ماستر معلومات غير دقيقة، لذا يُرجى التحقق من صحة الإجابات.</span>
+          <div className="text-center mt-3">
+            <span className={`text-[10px] transition-colors duration-500 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>قد يعرض جيو ماستر معلومات غير دقيقة، لذا يُرجى التحقق من صحة الإجابات.</span>
           </div>
         </div>
       </div>
