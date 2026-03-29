@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { HfInference } from '@huggingface/inference';
-import { GoogleGenAI } from '@google/genai';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { PDFParse } = require('pdf-parse');
@@ -21,59 +20,45 @@ function getHF() {
   return new HfInference(token);
 }
 
-function getGemini() {
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-  const baseURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-  if (!apiKey) {
-    throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY environment variable.');
-  }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: baseURL ? { apiVersion: '', baseUrl: baseURL } : undefined,
-  });
-}
-
 function validateModel(model) {
   return ALLOWED_MODELS.includes(model) ? model : 'Qwen/Qwen2.5-72B-Instruct';
 }
 
 async function extractTextFromImage(imageBase64) {
   try {
-    const ai = getGemini();
-    const base64Data = imageBase64.replace(/^data:image\/[^;]+;base64,/, '');
-    const mimeMatch = imageBase64.match(/^data:(image\/[^;]+);base64,/);
-    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const hf = getHF();
 
-    if (!base64Data || base64Data.length < 100) {
+    if (!imageBase64 || imageBase64.length < 100) {
       throw new Error('Image data is too small or empty');
     }
 
-    const modelName = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [
+    const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
+
+    const result = await hf.chatCompletion({
+      model: 'Qwen/Qwen2.5-VL-7B-Instruct',
+      messages: [
         {
           role: 'user',
-          parts: [
+          content: [
             {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Data,
-              },
+              type: 'image_url',
+              image_url: { url: imageUrl },
             },
             {
+              type: 'text',
               text: 'Extract ALL text visible in this image. Include every word, title, label, caption, and paragraph you can see. Preserve the original language (English, Arabic, or both). Return ONLY the extracted text, nothing else.',
             },
           ],
         },
       ],
+      max_tokens: 4000,
     });
 
-    const text = response.text || '';
-    console.log(`Gemini Vision: extracted ${text.length} chars from image`);
+    const text = result.choices?.[0]?.message?.content || '';
+    console.log(`HF Vision: extracted ${text.length} chars from image`);
     return text.substring(0, 100000);
   } catch (error) {
-    console.error('Gemini Vision Error:', error);
+    console.error('HF Vision Error:', error);
     throw new Error('Failed to extract text from image');
   }
 }
