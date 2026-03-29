@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
@@ -8,15 +7,6 @@ const AVAILABLE_MODELS = [
   { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (سريع ومتوازن)' },
   { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite (الخفيف)' }
 ];
-
-// Initialize Gemini API lazily to avoid crash when key is missing
-function getAI() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY غير موجود. يرجى إضافة مفتاح API من Gemini في إعدادات المشروع.');
-  }
-  return new GoogleGenAI({ apiKey });
-}
 
 type Source = {
   title: string;
@@ -126,35 +116,28 @@ export default function App() {
     if (msgToUpdate?.alternatives || !originalInput) return;
 
     try {
-      const prompt = `أعطني معاني وترجمات بديلة للنص التالي: "${originalInput}".
-      يرجى تضمين:
-      1. ترجمة حرفية.
-      2. المعنى العام أو الشائع.
-      3. المعنى بالعامية المصرية.
-      اكتب الرد باختصار وتنسيق واضح في نقاط.`;
-
-      const response = await getAI().models.generateContent({
-        model: selectedModel,
-        contents: prompt,
-        config: {
-          systemInstruction: "أنت خبير لغوي ومترجم محترف.",
-        }
+      const response = await fetch('/api/alternatives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ originalInput, selectedModel }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch alternatives');
+      }
 
       setCurrentMessages(prev => prev.map(msg => 
         msg.id === msgId 
-          ? { ...msg, alternatives: response.text, loadingAlternatives: false }
+          ? { ...msg, alternatives: data.text, loadingAlternatives: false }
           : msg
       ));
     } catch (error: any) {
       console.error('Error fetching alternatives:', error);
-      let errorMessage = 'حدث خطأ أثناء جلب المعاني الإضافية.';
-      if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.status === 429) {
-        errorMessage = 'عذراً، لقد تجاوزت الحد المسموح به للاستخدام (Quota Exceeded). يرجى المحاولة لاحقاً.';
-      }
       setCurrentMessages(prev => prev.map(msg => 
         msg.id === msgId 
-          ? { ...msg, alternatives: errorMessage, loadingAlternatives: false }
+          ? { ...msg, alternatives: error.message || 'حدث خطأ أثناء جلب المعاني الإضافية.', loadingAlternatives: false }
           : msg
       ));
     }
@@ -185,7 +168,6 @@ export default function App() {
     setLoading(true);
     
     const currentInput = inputText;
-    const currentSelectedFiles = [...selectedFiles];
     const currentFileData = [...fileData];
     
     setInputText('');
@@ -196,125 +178,50 @@ export default function App() {
     }
 
     try {
-      const historyContents = currentMessages
+      const history = currentMessages
         .filter(msg => !msg.loading && (msg.text || (msg.files && msg.files.length > 0)))
         .filter(msg => !(msg.role === 'model' && (msg.text.includes('حدث خطأ') || msg.text.includes('عذراً، لقد تجاوزت'))))
-        .map(msg => {
-          const msgParts: any[] = [];
-          if (msg.role === 'user' && msg.files) {
-            msg.files.forEach(file => {
-              const base64Data = file.data.split(',')[1];
-              if (base64Data) {
-                msgParts.push({
-                  inlineData: {
-                    data: base64Data,
-                    mimeType: file.type,
-                  },
-                });
-              }
-            });
-          }
-          if (msg.text) {
-            msgParts.push({ text: msg.text });
-          }
-          if (msgParts.length === 0) {
-            msgParts.push({ text: " " });
-          }
-          return { role: msg.role, parts: msgParts };
-        });
+        .map(msg => ({
+          role: msg.role,
+          text: msg.text,
+          files: msg.files,
+        }));
 
-      const currentParts: any[] = [];
-
-      if (currentSelectedFiles.length > 0) {
-        currentFileData.forEach((file, index) => {
-          const base64Data = file.data.split(',')[1];
-          if (base64Data) {
-            currentParts.push({
-              inlineData: {
-                data: base64Data,
-                mimeType: currentSelectedFiles[index].type,
-              },
-            });
-          }
-        });
-      }
-
-      let systemInstruction = '';
-      let promptText = '';
-      // Always enable Google Search to ensure connection to external sites as requested
-      let tools: any[] = [{ googleSearch: {} }];
-
-      if (activeTab === 'search') {
-        systemInstruction = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately using reputable international sources. 
-        ${withExplanation ? 'Provide a detailed, comprehensive explanation in Arabic.' : 'Provide a very concise, direct answer in Arabic WITHOUT any detailed explanation.'}`;
-        promptText = `Answer the following geographical query in Arabic:\n${currentInput}`;
-      } else {
-        systemInstruction = `You are an expert geography teacher and translator. Your task is to translate geographical terms between English and Arabic. 
-        DO NOT provide literal translations like a standard translator. Provide the accurate, scientifically accepted geographical term in the target language.
-        ${withExplanation ? 'Provide the translation AND a detailed geographical explanation of the term in Arabic.' : 'Provide ONLY the translated term concisely, without any explanation.'}`;
-        promptText = `Translate the following geographical content from ${translationDir === 'en-ar' ? 'English to Arabic' : 'Arabic to English'}:\n${currentInput}`;
-      }
-
-      currentParts.push({ text: promptText });
-      
-      const finalContents = [...historyContents, { role: 'user', parts: currentParts }];
-
-      let response;
-      const ai = getAI();
-      try {
-        response = await ai.models.generateContent({
-          model: selectedModel,
-          contents: finalContents,
-          config: {
-            systemInstruction,
-            tools,
-          },
-        });
-      } catch (primaryError) {
-        console.error('Primary model failed, trying fallback...', primaryError);
-        // Fallback to another model if the selected one fails
-        const fallbackModel = selectedModel === 'gemini-3.1-pro-preview' ? 'gemini-3-flash-preview' : 'gemini-3.1-pro-preview';
-        response = await ai.models.generateContent({
-          model: fallbackModel,
-          contents: finalContents,
-          config: {
-            systemInstruction,
-            tools,
-          },
-        });
-      }
-
-      // Extract sources from grounding metadata
-      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-      const extractedSources: Source[] = [];
-      chunks.forEach((chunk: any) => {
-        if (chunk.web?.uri && chunk.web?.title) {
-          extractedSources.push({
-            uri: chunk.web.uri,
-            title: chunk.web.title
-          });
-        }
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: currentInput,
+          activeTab,
+          withExplanation,
+          translationDir,
+          selectedModel,
+          files: currentFileData.length > 0 ? currentFileData : undefined,
+          history,
+        }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'حدث خطأ أثناء معالجة طلبك.');
+      }
 
       setCurrentMessages(prev => prev.map(msg => 
         msg.id === modelMsgId 
           ? { 
               ...msg, 
-              text: response.text || 'لم يتم العثور على نتائج.', 
-              sources: extractedSources.length > 0 ? extractedSources : undefined,
+              text: data.text, 
+              sources: data.sources,
               loading: false 
             }
           : msg
       ));
     } catch (error: any) {
       console.error('Error generating content:', error);
-      let errorMessage = 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
-      if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.status === 429) {
-        errorMessage = 'عذراً، لقد تجاوزت الحد المسموح به للاستخدام (Quota Exceeded). يرجى المحاولة لاحقاً.';
-      }
       setCurrentMessages(prev => prev.map(msg => 
         msg.id === modelMsgId 
-          ? { ...msg, text: errorMessage, loading: false }
+          ? { ...msg, text: error.message || 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.', loading: false }
           : msg
       ));
     } finally {
@@ -332,7 +239,6 @@ export default function App() {
   return (
     <div dir="rtl" className="min-h-screen text-white font-sans flex flex-col relative z-0 h-screen overflow-hidden bg-black">
       
-      {/* Background Image with referrerPolicy to prevent blocking */}
       <img 
         src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=3000&auto=format&fit=crop"
         alt="خلفية جغرافية"
@@ -342,7 +248,6 @@ export default function App() {
 
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
-        {/* Header & Tabs */}
         <header className={`flex flex-col items-center shrink-0 transition-all duration-500 ${currentMessages.length > 0 ? 'mb-2 md:mb-6' : 'mb-6'}`}>
           <h1 className={`font-bold drop-shadow-lg text-white flex items-center justify-center gap-3 transition-all duration-500 ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
             <div className={`relative rounded-full overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)] flex items-center justify-center bg-black border border-blue-400/50 transition-all ${currentMessages.length > 0 ? 'w-6 h-6 md:w-10 md:h-10' : 'w-10 h-10'}`}>
@@ -355,7 +260,6 @@ export default function App() {
             جيو ماستر
           </h1>
           
-          {/* Separated Tabs */}
           <div className={`flex gap-2 md:gap-4 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
             <button
               onClick={() => setActiveTab('search')}
@@ -382,7 +286,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Chat Area */}
         <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-4 px-2 md:px-4 scrollbar-hide">
           {currentMessages.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center text-center opacity-70">
@@ -399,7 +302,6 @@ export default function App() {
               <div key={msg.id} className={`flex w-full ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                 <div className={`flex gap-3 max-w-[90%] md:max-w-[80%] ${msg.role === 'user' ? 'flex-row' : 'flex-row-reverse'}`}>
                   
-                  {/* Avatar */}
                   <div className="shrink-0 mt-1">
                     {msg.role === 'user' ? (
                       <div className="w-8 h-8 rounded-full bg-blue-600/50 flex items-center justify-center border border-blue-400/30">
@@ -416,7 +318,6 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Message Bubble */}
                   <div className={`p-3 md:p-5 relative transition-all duration-300 ${
                     msg.role === 'user' 
                       ? 'border-r-2 border-blue-500/30' 
@@ -458,7 +359,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Alternatives Section */}
                     {msg.showAlternatives && (
                       <div className="mt-4 pt-3 border-t border-white/10">
                         <h4 className="text-sm font-semibold text-blue-300 mb-2">معاني وترجمات أخرى:</h4>
@@ -475,7 +375,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Sources Section */}
                     {msg.sources && msg.sources.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-white/10">
                         <button 
@@ -505,7 +404,6 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Side Actions (Outside Bubble) */}
                   {msg.role === 'model' && msg.isTranslation && !msg.loading && msg.originalInput && (
                     <div className="flex flex-col justify-start mt-2 shrink-0">
                       <button 
@@ -524,10 +422,8 @@ export default function App() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
         <div className="shrink-0 mt-2 flex flex-col items-center">
           
-          {/* Model Selector Attached to Search Box */}
           <div className="w-full max-w-2xl flex flex-col items-center relative z-20">
             <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-t-xl px-3 py-1 hover:bg-white/5 transition-colors shadow-lg mb-[-1px] border-b-0">
               <Bot size={14} className="text-blue-400" />
@@ -546,7 +442,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Search Box with Neon Glow */}
             <div className="w-full relative bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl md:rounded-[2rem] shadow-[0_0_20px_rgba(59,130,246,0.15)] focus-within:shadow-[0_0_30px_rgba(59,130,246,0.3)] focus-within:border-blue-500/50 transition-all duration-300 p-1.5 flex items-end gap-1.5">
               
               <input
@@ -601,7 +496,6 @@ export default function App() {
                 />
               </div>
 
-              {/* Globe Submit Button */}
               <button
                 onClick={handleSubmit}
                 disabled={loading || (!inputText.trim() && selectedFiles.length === 0)}
@@ -620,7 +514,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Controls */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-3 mb-1 px-2">
             <label className="flex items-center gap-2 cursor-pointer bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
               <input
