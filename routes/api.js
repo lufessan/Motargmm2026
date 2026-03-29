@@ -38,12 +38,67 @@ async function extractTextFromImage(imageBase64) {
   }
 }
 
-// Translate text using NLLB
+// Geographic terminology dictionary for accurate translations
+const GEO_DICTIONARY = {
+  'landform': 'أشكال سطح الأرض',
+  'terrain': 'الأرضية/التضاريس',
+  'altitude': 'الارتفاع عن سطح البحر',
+  'latitude': 'دائرة العرض',
+  'longitude': 'خط الطول',
+  'elevation': 'الارتفاع',
+  'plateau': 'هضبة',
+  'valley': 'وادي',
+  'basin': 'حوض',
+  'delta': 'دلتا',
+  'estuary': 'مصب النهر',
+  'canyon': 'أخدود',
+  'gorge': 'مضيق عميق',
+  'ridge': 'سلسلة جبلية',
+  'watershed': 'حوض التصريف المائي',
+  'tributary': 'رافد نهر',
+  'confluence': 'التقاء النهر',
+  'floodplain': 'سهل فيضي',
+  'wetland': 'أراضي رطبة',
+  'ecosystem': 'النظام البيئي',
+  'biome': 'منطقة حيوية',
+  'strata': 'طبقات جيولوجية',
+  'sediment': 'الرسوبيات',
+  'erosion': 'التعرية',
+  'deposition': 'الترسيب',
+  'weathering': 'التجوية',
+  'climate': 'المناخ',
+  'weather': 'الطقس',
+  'precipitation': 'الهطول المائي',
+  'topography': 'الطبوغرافيا/طبيعة السطح',
+  'geography': 'الجغرافيا',
+  'geomorphology': 'علم أشكال سطح الأرض',
+  'hydrogeology': 'الهيدروجيولوجيا/جيولوجيا المياه',
+  'seismology': 'علم الزلازل',
+  'cartography': 'فن رسم الخرائط',
+};
+
+// Translate text using NLLB with geographic context
 async function translateText(text, srcLang, tgtLang, model) {
   const hf = getHF();
+  
+  // Check for geographic terms and use dictionary if found
+  const lowerText = text.toLowerCase();
+  for (const [eng, arb] of Object.entries(GEO_DICTIONARY)) {
+    const regex = new RegExp(`\\b${eng}\\b`, 'gi');
+    if (regex.test(lowerText)) {
+      // If exact geographic term found, replace with accurate translation
+      return text.replace(regex, (match) => {
+        return lowerText.includes(match.toLowerCase()) ? arb : match;
+      });
+    }
+  }
+  
+  // For non-dictionary terms, use NLLB with geographic context prompt
+  const contextualInput = `As a geography expert, translate this geographic term accurately (not literally): ${text}`;
+  
   const response = await hf.translation({
     model,
-    inputs: text,
+    inputs: contextualInput,
     parameters: {
       src_lang: srcLang,
       tgt_lang: tgtLang,
@@ -92,11 +147,26 @@ router.post('/chat', async (req, res) => {
         sources: undefined,
       });
     } else {
-      // For translation, use NLLB model
+      // For translation, use NLLB model with geographic expertise
       const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
       const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
 
-      const translatedText = await translateText(textToProcess, srcLang, tgtLang, selectedModel);
+      // Check if term exists in geographic dictionary for accurate translation
+      const lowerText = textToProcess.toLowerCase();
+      let translatedText = '';
+      
+      // Direct dictionary lookup for geographic terms
+      for (const [eng, arb] of Object.entries(GEO_DICTIONARY)) {
+        if (lowerText.includes(eng.toLowerCase())) {
+          translatedText = arb;
+          break;
+        }
+      }
+      
+      // If no dictionary match, use NLLB model
+      if (!translatedText) {
+        translatedText = await translateText(textToProcess, srcLang, tgtLang, selectedModel);
+      }
 
       res.json({
         text: translatedText || 'لم يتم الحصول على ترجمة.',
