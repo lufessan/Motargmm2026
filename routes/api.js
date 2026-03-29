@@ -68,10 +68,10 @@ async function extractTextFromFile(fileData, fileType) {
 
 async function callModel(hf, model, prompt) {
   const inputLen = prompt.length;
-  const maxTokens = inputLen > 5000 ? 2000 : 800;
+  const maxTokens = inputLen > 10000 ? 4000 : 1500;
   const result = await hf.chatCompletion({
     model: model,
-    messages: [{ role: 'user', content: prompt.substring(0, 30000) }],
+    messages: [{ role: 'user', content: prompt.substring(0, 95000) }],
     max_tokens: maxTokens,
   });
   return result.choices?.[0]?.message?.content || '';
@@ -96,7 +96,7 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, translationDir, withExplanation, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    let textToProcess = input.substring(0, 10000);
+    let textToProcess = input.substring(0, 90000);
 
     if (files && files.length > 0) {
       console.log('Processing file...');
