@@ -83,7 +83,7 @@ router.post('/chat', async (req, res) => {
       prompt = `أجب على هذا السؤال الجغرافي باللغة العربية باختصار: ${textToProcess}`;
     } else {
       if (translationDir === 'en-ar') {
-        prompt = `أنت مترجم جغرافي أكاديمي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية كما يُستخدم في الكتب الجغرافية الأكاديمية العربية. أعط الترجمة الأكاديمية المتخصصة فقط بدون أي شرح.\n\nمثال: landform = التضاريس | continental shelf = الجرف القاري | erosion = التعرية\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+        prompt = `أنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
       } else {
         prompt = `You are an expert geographic translator. Translate the following Arabic term to English. Give ONLY the translation, no explanations.\n\nTerm: ${textToProcess}\nTranslation:`;
       }
