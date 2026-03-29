@@ -44,8 +44,13 @@ async function extractTextFromImage(imageBase64) {
     const mimeMatch = imageBase64.match(/^data:(image\/[^;]+);base64,/);
     const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
 
+    if (!base64Data || base64Data.length < 100) {
+      throw new Error('Image data is too small or empty');
+    }
+
+    const modelName = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: modelName,
       contents: [
         {
           role: 'user',
@@ -226,10 +231,13 @@ router.post('/extract-text', async (req, res) => {
 
     res.json({ text: extractedText.trim() });
   } catch (error) {
-    console.error('Extract text API error:', error.message);
-    res.status(500).json({
-      error: 'حدث خطأ أثناء استخراج النصوص. يرجى المحاولة مرة أخرى.',
-    });
+    console.error('Extract text API error:', error.message, error.stack);
+    const errMsg = error.message?.includes('API key')
+      ? 'مفتاح Gemini API غير مُعدّ. يرجى إعداده أولاً.'
+      : error.message?.includes('too small')
+      ? 'الصورة صغيرة جداً أو فارغة.'
+      : 'حدث خطأ أثناء استخراج النصوص. يرجى المحاولة مرة أخرى.';
+    res.status(500).json({ error: errMsg });
   }
 });
 
