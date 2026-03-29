@@ -48,9 +48,9 @@ async function extractTextFromPDF(pdfBase64) {
     const result = await parser.getText();
     parser.destroy();
     const text = typeof result === 'object' ? result.text : result;
-    const trimmed = (text || '').trim();
+    const trimmed = (text || '').replace(/\n-- \d+ of \d+ --\n/g, '\n').trim();
     console.log(`PDF: extracted ${trimmed.length} chars`);
-    return trimmed.substring(0, 2000);
+    return trimmed.substring(0, 100000);
   } catch (error) {
     console.error('PDF Error:', error);
     throw new Error('Failed to extract text from PDF');
@@ -67,10 +67,12 @@ async function extractTextFromFile(fileData, fileType) {
 }
 
 async function callModel(hf, model, prompt) {
+  const inputLen = prompt.length;
+  const maxTokens = inputLen > 5000 ? 2000 : 800;
   const result = await hf.chatCompletion({
     model: model,
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 500,
+    messages: [{ role: 'user', content: prompt.substring(0, 30000) }],
+    max_tokens: maxTokens,
   });
   return result.choices?.[0]?.message?.content || '';
 }
@@ -94,9 +96,9 @@ router.post('/chat', async (req, res) => {
     const { input, activeTab, translationDir, withExplanation, selectedModel: rawModel, files } = req.body;
     const selectedModel = validateModel(rawModel);
 
-    let textToProcess = input.substring(0, 500);
+    let textToProcess = input.substring(0, 10000);
 
-    if (files && files.length > 0 && activeTab === 'translate') {
+    if (files && files.length > 0) {
       console.log('Processing file...');
       try {
         const file = files[0];

@@ -252,7 +252,7 @@ export default function App() {
           <h1 className={`font-bold drop-shadow-lg text-white flex items-center justify-center gap-3 transition-all duration-500 ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
             <div className={`relative rounded-full overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)] flex items-center justify-center bg-black border border-blue-400/50 transition-all ${currentMessages.length > 0 ? 'w-6 h-6 md:w-10 md:h-10' : 'w-10 h-10'}`}>
               <img 
-                src="https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg?auto=compress&cs=tinysrgb&w=100" 
+                src="/earth-animated.gif" 
                 alt="شعار جيو ماستر" 
                 className="w-[115%] h-[115%] max-w-none object-cover"
               />
@@ -289,7 +289,7 @@ export default function App() {
         <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-4 px-2 md:px-4 scrollbar-hide">
           {currentMessages.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center text-center opacity-70">
-              <Globe size={64} className="text-blue-400/50 mb-4" />
+              <img src="/earth-animated.gif" alt="جيو ماستر" className="w-16 h-16 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)] mb-4" />
               <h2 className="text-2xl font-semibold mb-2">مرحباً بك في جيو ماستر</h2>
               <p className="text-gray-300 max-w-md">
                 {activeTab === 'search' 
@@ -310,7 +310,7 @@ export default function App() {
                     ) : (
                       <div className="w-8 h-8 rounded-full overflow-hidden shadow-[0_0_10px_rgba(59,130,246,0.4)] flex items-center justify-center bg-black border border-blue-400/50">
                         <img 
-                          src="https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg?auto=compress&cs=tinysrgb&w=100" 
+                          src="/earth-animated.gif" 
                           alt="AI" 
                           className="w-[115%] h-[115%] max-w-none object-cover"
                         />
@@ -505,7 +505,7 @@ export default function App() {
                 <div className="absolute inset-0 bg-blue-500 rounded-full blur-lg opacity-40 group-hover:opacity-80 transition-opacity"></div>
                 <div className="w-10 h-10 relative z-10 rounded-full overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)] flex items-center justify-center bg-black border border-blue-400/50 group-hover:border-blue-300 transition-colors">
                   <img 
-                    src="https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg?auto=compress&cs=tinysrgb&w=100" 
+                    src="/earth-animated.gif" 
                     alt="إرسال" 
                     className="w-[115%] h-[115%] max-w-none object-cover group-hover:scale-110 transition-transform duration-500"
                   />
