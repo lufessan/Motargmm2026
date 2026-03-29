@@ -29,7 +29,7 @@ function getGemini() {
   }
   return new GoogleGenAI({
     apiKey,
-    httpOptions: baseURL ? { baseUrl: baseURL } : undefined,
+    httpOptions: baseURL ? { apiVersion: '', baseUrl: baseURL } : undefined,
   });
 }
 
