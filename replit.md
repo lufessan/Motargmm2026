@@ -6,7 +6,8 @@ A React + Vite frontend application for geographic search and translation using 
 ## Tech Stack
 - **Frontend**: React 19, TypeScript, Tailwind CSS v4
 - **Build Tool**: Vite 6
-- **AI**: Google Gemini API (`@google/genai`)
+- **Backend**: Express.js (Node.js)
+- **AI**: Google Gemini via Replit AI Integrations (no external API key needed)
 - **UI Libraries**: lucide-react, react-markdown, motion
 
 ## Project Structure
@@ -15,6 +16,9 @@ A React + Vite frontend application for geographic search and translation using 
 │   ├── App.tsx       # Main application component
 │   ├── main.tsx      # React entry point
 │   └── index.css     # Global styles
+├── routes/
+│   └── api.js        # Express API routes (chat, alternatives)
+├── server.js          # Express server entry point
 ├── index.html         # HTML entry point
 ├── vite.config.ts     # Vite configuration (port 5000, host 0.0.0.0)
 ├── package.json
@@ -22,7 +26,8 @@ A React + Vite frontend application for geographic search and translation using 
 ```
 
 ## Environment Variables
-- `GEMINI_API_KEY` - Required for Gemini AI API calls
+- `AI_INTEGRATIONS_GEMINI_API_KEY` - Auto-managed by Replit AI Integrations
+- `AI_INTEGRATIONS_GEMINI_BASE_URL` - Auto-managed by Replit AI Integrations
 
 ## Running the App
 
@@ -47,16 +52,27 @@ Runs on `http://0.0.0.0:PORT`
 ## API Endpoints
 - `GET /api/status` → `{ "status": "running" }`
 - `GET /api/health` → `{ "status": "ok", "uptime": ..., "timestamp": ... }`
+- `POST /api/chat` → AI-powered geographic search or translation
+- `POST /api/alternatives` → Alternative meanings/translations
 
 ## Features
 - **Geographic Search**: Ask questions about geography, answered using Gemini AI with Google Search grounding
 - **Geographic Translator**: Translate geographic terms between English and Arabic with scientific accuracy
 - RTL (right-to-left) layout for Arabic support
 - File upload support (images and documents)
-- Multi-model selection (Gemini 3.1 Pro, Gemini 3 Flash, Gemini 3.1 Flash Lite)
+- Multi-model selection (Gemini 2.5 Flash, Gemini 2.5 Pro, Gemini 3 Flash)
 - Source citations from web search
+- Fallback model support if primary model fails
 
 ## Deployment
-Configured as a static site deployment:
+Configured as autoscale deployment:
 - Build command: `npm run build`
-- Output directory: `dist`
+- Run command: `node server.js`
+- Express serves both API endpoints and built static frontend
+
+## Architecture Notes
+- HMR is disabled (`hmr: false`) because it fails through Replit's proxy
+- Vite ignores `.local/**`, `.cache/**`, `node_modules/**` to prevent reload loops
+- Server.js body limit set to 50mb to handle file uploads
+- Vite proxies `/api/*` to `http://localhost:3001` in development
+- All AI calls go through the backend - no API keys exposed to frontend

@@ -3,9 +3,9 @@ import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (سريع ومتوازن)' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (الأذكى والأدق)' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (الخفيف والسريع)' }
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (سريع ومتوازن)' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (الأذكى والأدق)' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (الأحدث)' }
 ];
 
 type Source = {
@@ -44,7 +44,7 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;
