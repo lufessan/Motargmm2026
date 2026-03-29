@@ -304,25 +304,21 @@ export default function App() {
                   
                   <div className="shrink-0 mt-1">
                     {msg.role === 'user' ? (
-                      <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center border border-yellow-400/50 shadow-[0_0_8px_rgba(234,179,8,0.3)]">
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center">
                         <img src="/user-emoji.png" alt="المستخدم" className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-11 h-11 rounded-full overflow-hidden shadow-[0_0_10px_rgba(59,130,246,0.4)] flex items-center justify-center bg-black border border-blue-400/50">
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden shadow-[0_0_12px_rgba(59,130,246,0.5)] flex items-center justify-center bg-black">
                         <img 
                           src="/earth-animated.gif" 
                           alt="AI" 
-                          className="w-[115%] h-[115%] max-w-none object-cover"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     )}
                   </div>
 
-                  <div className={`p-3 md:p-5 relative transition-all duration-300 ${
-                    msg.role === 'user' 
-                      ? '' 
-                      : ''
-                  }`}>
+                  <div className="p-3 md:p-5 relative transition-all duration-300">
                     {msg.files && msg.files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
                         {msg.files.map((file, idx) => (
