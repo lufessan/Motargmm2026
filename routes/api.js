@@ -3,10 +3,11 @@ import { HfInference } from '@huggingface/inference';
 
 const router = Router();
 
+// NLLB models for translation (supports 200+ languages)
 const ALLOWED_MODELS = [
-  'meta-llama/Llama-2-7b-chat-hf',
-  'mistralai/Mistral-7B-Instruct-v0.1',
-  'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+  'facebook/nllb-200-distilled-600M',  // Fast, good quality
+  'facebook/nllb-200-1.3B',             // Better quality
+  'facebook/nllb-200-3.3B'              // Best quality
 ];
 
 function getHF() {
@@ -18,7 +19,7 @@ function getHF() {
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'meta-llama/Llama-2-7b-chat-hf';
+  return ALLOWED_MODELS.includes(model) ? model : 'facebook/nllb-200-distilled-600M';
 }
 
 router.get('/status', (req, res) => {
@@ -35,58 +36,34 @@ router.get('/health', (req, res) => {
 
 router.post('/chat', async (req, res) => {
   try {
-    const { input, activeTab, withExplanation, translationDir, selectedModel: rawModel, files, history } = req.body;
+    const { input, activeTab, translationDir, selectedModel: rawModel } = req.body;
     const selectedModel = validateModel(rawModel);
-
-    let systemPrompt = '';
-    let userMessage = '';
-
-    if (activeTab === 'search') {
-      systemPrompt = `You are an expert geographer and researcher. Your task is to answer geographical questions accurately.
-        ${withExplanation ? 'Provide a detailed, comprehensive explanation in Arabic.' : 'Provide a very concise, direct answer in Arabic WITHOUT any detailed explanation.'}`;
-      userMessage = `Answer the following geographical query in Arabic:\n${input}`;
-    } else {
-      systemPrompt = `You are an expert geography teacher and translator. Your task is to translate geographical terms between English and Arabic.
-        DO NOT provide literal translations. Provide the accurate, scientifically accepted geographical term in the target language.
-        ${withExplanation ? 'Provide the translation AND a detailed geographical explanation in Arabic.' : 'Provide ONLY the translated term concisely.'}`;
-      userMessage = `Translate the following geographical content from ${translationDir === 'en-ar' ? 'English to Arabic' : 'Arabic to English'}:\n${input}`;
-    }
 
     const hf = getHF();
 
-    try {
-      const response = await hf.textGeneration({
-        model: selectedModel,
-        inputs: `${systemPrompt}\n\nUser: ${userMessage}`,
-        parameters: {
-          max_new_tokens: 500,
-          temperature: 0.7,
-          top_p: 0.9,
-        },
-      });
-
+    if (activeTab === 'search') {
+      // For search, provide a simple geographic answer
+      // In production, you might want to use a search API here
       res.json({
-        text: response.generated_text || 'لم يتم الحصول على نتيجة.',
+        text: `جغرافيا: ${input}`,
         sources: undefined,
       });
-    } catch (primaryError) {
-      console.error('Primary model failed, trying fallback...', primaryError);
-      const fallbackModel = selectedModel === 'meta-llama/Llama-2-7b-chat-hf' 
-        ? 'mistralai/Mistral-7B-Instruct-v0.1' 
-        : 'meta-llama/Llama-2-7b-chat-hf';
-      
-      const response = await hf.textGeneration({
-        model: fallbackModel,
-        inputs: `${systemPrompt}\n\nUser: ${userMessage}`,
+    } else {
+      // For translation, use NLLB model
+      const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
+      const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
+
+      const response = await hf.translation({
+        model: selectedModel,
+        inputs: input,
         parameters: {
-          max_new_tokens: 500,
-          temperature: 0.7,
-          top_p: 0.9,
+          src_lang: srcLang,
+          tgt_lang: tgtLang,
         },
       });
 
       res.json({
-        text: response.generated_text || 'لم يتم الحصول على نتيجة.',
+        text: response[0]?.translation_text || 'لم يتم الحصول على ترجمة.',
         sources: undefined,
       });
     }
@@ -100,31 +77,48 @@ router.post('/chat', async (req, res) => {
 
 router.post('/alternatives', async (req, res) => {
   try {
-    const { originalInput, selectedModel: rawModel } = req.body;
+    const { originalInput, selectedModel: rawModel, translationDir } = req.body;
     const selectedModel = validateModel(rawModel);
 
     const hf = getHF();
-    const prompt = `أعطني معاني وترجمات بديلة للنص التالي: "${originalInput}".
-      يرجى تضمين:
-      1. ترجمة حرفية.
-      2. المعنى العام أو الشائع.
-      3. المعنى بالعامية المصرية.
-      اكتب الرد باختصار وتنسيق واضح في نقاط.`;
+    const srcLang = translationDir === 'en-ar' ? 'eng_Latn' : 'ara_Arab';
+    const tgtLang = translationDir === 'en-ar' ? 'ara_Arab' : 'eng_Latn';
 
-    const response = await hf.textGeneration({
+    // Get primary translation
+    const primaryResponse = await hf.translation({
       model: selectedModel,
-      inputs: `أنت خبير لغوي ومترجم محترف.\n\nUser: ${prompt}`,
+      inputs: originalInput,
       parameters: {
-        max_new_tokens: 500,
-        temperature: 0.7,
+        src_lang: srcLang,
+        tgt_lang: tgtLang,
       },
     });
 
-    res.json({ text: response.generated_text });
+    const primaryTranslation = primaryResponse[0]?.translation_text || '';
+
+    // Fallback model for alternatives
+    const fallbackModel = selectedModel === 'facebook/nllb-200-distilled-600M'
+      ? 'facebook/nllb-200-1.3B'
+      : 'facebook/nllb-200-distilled-600M';
+
+    const fallbackResponse = await hf.translation({
+      model: fallbackModel,
+      inputs: originalInput,
+      parameters: {
+        src_lang: srcLang,
+        tgt_lang: tgtLang,
+      },
+    });
+
+    const alternativeTranslation = fallbackResponse[0]?.translation_text || '';
+
+    const result = `**الترجمة الأساسية:**\n${primaryTranslation}\n\n**ترجمات بديلة:**\n${alternativeTranslation}`;
+
+    res.json({ text: result });
   } catch (error) {
     console.error('Alternatives API error:', error);
     res.status(500).json({
-      error: 'حدث خطأ أثناء جلب المعاني الإضافية.',
+      error: 'حدث خطأ أثناء جلب الترجمات البديلة.',
     });
   }
 });

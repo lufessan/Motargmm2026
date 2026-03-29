@@ -3,9 +3,9 @@ import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
-  { id: 'meta-llama/Llama-2-7b-chat-hf', name: 'Llama 2 7B (متوازن)' },
-  { id: 'mistralai/Mistral-7B-Instruct-v0.1', name: 'Mistral 7B (سريع)' },
-  { id: 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO', name: 'Nous Hermes 2 (قوي)' }
+  { id: 'facebook/nllb-200-distilled-600M', name: 'NLLB 600M (سريع)' },
+  { id: 'facebook/nllb-200-1.3B', name: 'NLLB 1.3B (متوازن)' },
+  { id: 'facebook/nllb-200-3.3B', name: 'NLLB 3.3B (أفضل دقة)' }
 ];
 
 type Source = {
@@ -44,7 +44,7 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('meta-llama/Llama-2-7b-chat-hf');
+  const [selectedModel, setSelectedModel] = useState('facebook/nllb-200-distilled-600M');
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;
