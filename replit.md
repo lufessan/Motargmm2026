@@ -30,11 +30,11 @@ A React + Vite frontend application for geographic search and translation using 
 - `HUGGINGFACE_API_TOKEN` - Hugging Face API token for inference
 
 ## Available Models
-- `mistralai/Mistral-7B-Instruct-v0.2` - Fast (default)
-- `Qwen/Qwen2.5-7B-Instruct` - Balanced
-- `meta-llama/Llama-3.1-8B-Instruct` - Smart
+- `Qwen/Qwen2.5-72B-Instruct` - Most accurate (default)
+- `meta-llama/Llama-3.3-70B-Instruct` - Fast and smart
+- `mistralai/Mistral-7B-Instruct-v0.2` - Lightweight
 
-All models use `hf.chatCompletion()` API. Falcon 7B and Llama 2 are NOT supported (no inference provider). NLLB models also have no provider.
+All models use `hf.chatCompletion()` API. Falcon 7B, Llama 2, and NLLB models have no inference provider - do NOT use them.
 
 ## Running the App
 

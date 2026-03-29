@@ -5,9 +5,9 @@ import Tesseract from 'tesseract.js';
 const router = Router();
 
 const ALLOWED_MODELS = [
-  'mistralai/Mistral-7B-Instruct-v0.2',
-  'Qwen/Qwen2.5-7B-Instruct',
-  'meta-llama/Llama-3.1-8B-Instruct'
+  'Qwen/Qwen2.5-72B-Instruct',
+  'meta-llama/Llama-3.3-70B-Instruct',
+  'mistralai/Mistral-7B-Instruct-v0.2'
 ];
 
 function getHF() {
@@ -19,7 +19,7 @@ function getHF() {
 }
 
 function validateModel(model) {
-  return ALLOWED_MODELS.includes(model) ? model : 'mistralai/Mistral-7B-Instruct-v0.2';
+  return ALLOWED_MODELS.includes(model) ? model : 'Qwen/Qwen2.5-72B-Instruct';
 }
 
 async function extractTextFromImage(imageBase64) {
@@ -91,9 +91,9 @@ router.post('/chat', async (req, res) => {
       responseText = await callModel(hf, selectedModel, prompt);
     } catch (primaryError) {
       console.error('Primary model failed, trying fallback...', primaryError.message);
-      const fallbackModel = selectedModel === 'mistralai/Mistral-7B-Instruct-v0.2'
-        ? 'Qwen/Qwen2.5-7B-Instruct'
-        : 'mistralai/Mistral-7B-Instruct-v0.2';
+      const fallbackModel = selectedModel === 'Qwen/Qwen2.5-72B-Instruct'
+        ? 'meta-llama/Llama-3.3-70B-Instruct'
+        : 'Qwen/Qwen2.5-72B-Instruct';
       responseText = await callModel(hf, fallbackModel, prompt);
     }
 

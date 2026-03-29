@@ -3,9 +3,9 @@ import Markdown from 'react-markdown';
 import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
-  { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral 7B (سريع)' },
-  { id: 'Qwen/Qwen2.5-7B-Instruct', name: 'Qwen 2.5 (متوازن)' },
-  { id: 'meta-llama/Llama-3.1-8B-Instruct', name: 'Llama 3.1 (ذكي)' }
+  { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B (الأدق)' },
+  { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B (سريع وذكي)' },
+  { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral 7B (خفيف)' }
 ];
 
 type Source = {
@@ -44,7 +44,7 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('mistralai/Mistral-7B-Instruct-v0.2');
+  const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
   
   const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;
