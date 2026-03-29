@@ -402,7 +402,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-4 px-2 md:px-4 scrollbar-hide">
+        <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-32 md:pb-4 px-2 md:px-4 scrollbar-hide">
           {currentMessages.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center text-center opacity-70">
               <img src="/book-mascot.png" alt="جيو ماستر" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] mb-4 object-contain" />
@@ -571,7 +571,7 @@ export default function App() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="shrink-0 mt-2 flex flex-col items-center">
+        <div className="shrink-0 mt-2 md:mt-2 flex flex-col items-center fixed md:static bottom-0 left-0 right-0 z-30 md:z-20 px-2 pb-2 md:px-0 md:pb-0">
           
           <div className="w-full max-w-2xl flex flex-col items-center relative z-20">
             
@@ -724,9 +724,6 @@ export default function App() {
             </div>
           </div>
 
-          <div className="text-center mt-3">
-            <span className={`text-[10px] transition-colors duration-500 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>قد يعرض جيو ماستر معلومات غير دقيقة، لذا يُرجى التحقق من صحة الإجابات.</span>
-          </div>
         </div>
       </div>
     </div>
