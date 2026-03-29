@@ -66,10 +66,14 @@ Runs on `http://0.0.0.0:PORT`
 - **Geographic Search**: Ask questions about geography in Arabic
 - **Geographic Translator**: Translate geographic terms between English and Arabic with scientific accuracy
 - **OCR Support**: Extract text from uploaded images (English + Arabic) via Tesseract.js
+- **PDF Support**: Extract text from uploaded PDF files via pdf-parse
 - RTL (right-to-left) layout for Arabic support
-- File upload support (images)
+- File upload support (images + PDFs)
 - Multi-model selection
 - Fallback model support if primary model fails
+- **Video Background**: Animated sea waves background (`/sea-waves-bg.mp4`) with poster fallback (`/sea-waves-poster.jpg`)
+- **3D Glassmorphism Message Bubbles**: Messages have gradient backgrounds, backdrop blur, inset highlights, and CSS pseudo-element shine effects (`msg-bubble-user` / `msg-bubble-ai` classes in index.css)
+- **Reduced Motion Support**: Falls back to static poster image when `prefers-reduced-motion` is enabled
 
 ## Deployment
 Configured as autoscale deployment:

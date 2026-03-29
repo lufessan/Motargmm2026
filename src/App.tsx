@@ -239,12 +239,23 @@ export default function App() {
   return (
     <div dir="rtl" className="min-h-screen text-white font-sans flex flex-col relative z-0 h-screen overflow-hidden bg-black">
       
-      <img 
-        src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=3000&auto=format&fit=crop"
-        alt="خلفية جغرافية"
-        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-60"
-        referrerPolicy="no-referrer"
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        poster="/sea-waves-poster.jpg"
+        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 motion-reduce:hidden"
+      >
+        <source src="/sea-waves-bg.mp4" type="video/mp4" />
+      </video>
+      <img
+        src="/sea-waves-poster.jpg"
+        alt=""
+        className="fixed inset-0 w-full h-full object-cover -z-10 opacity-70 hidden motion-reduce:block"
       />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 -z-10" />
 
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
@@ -318,7 +329,11 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="p-3 md:p-5 relative transition-all duration-300">
+                  <div className={`p-4 md:p-5 relative transition-all duration-300 rounded-2xl md:rounded-3xl ${
+                      msg.role === 'user'
+                        ? 'msg-bubble-user bg-gradient-to-br from-blue-900/50 via-blue-800/30 to-cyan-900/40 border border-blue-400/20 shadow-[0_8px_32px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
+                        : 'msg-bubble-ai bg-gradient-to-br from-slate-800/50 via-gray-800/30 to-slate-900/40 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.08),0_2px_4px_rgba(0,0,0,0.3)] backdrop-blur-md md:backdrop-blur-xl'
+                    }`}>
                     {msg.files && msg.files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
                         {msg.files.map((file, idx) => (
