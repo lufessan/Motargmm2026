@@ -332,14 +332,27 @@ export default function App() {
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
         <header className={`flex flex-col items-center shrink-0 transition-all duration-500 ${currentMessages.length > 0 ? 'mb-2 md:mb-6' : 'mb-6'}`}>
-          <h1 className={`font-extrabold drop-shadow-lg flex items-center justify-center gap-3 transition-all duration-500 ${isDark ? 'text-white' : 'text-gray-800'} ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-1 md:mb-2' : 'text-3xl md:text-4xl mb-2'}`}>
-            <img 
-              src="/book-mascot.png" 
-              alt="شعار جيو ماستر" 
-              className={`drop-shadow-[0_0_10px_rgba(234,179,8,0.4)] transition-all object-contain ${currentMessages.length > 0 ? 'w-8 h-8 md:w-12 md:h-12' : 'w-12 h-12 md:w-14 md:h-14'}`}
-            />
-            جيو ماستر
-          </h1>
+          <div className="flex items-center justify-center gap-3 w-full">
+            <h1 className={`font-extrabold drop-shadow-lg flex items-center justify-center gap-3 transition-all duration-500 ${isDark ? 'text-white' : 'text-gray-800'} ${currentMessages.length > 0 ? 'text-xl md:text-4xl mb-0' : 'text-3xl md:text-4xl mb-0'}`}>
+              <img 
+                src="/book-mascot.png" 
+                alt="شعار جيو ماستر" 
+                className={`drop-shadow-[0_0_10px_rgba(234,179,8,0.4)] transition-all object-contain ${currentMessages.length > 0 ? 'w-8 h-8 md:w-12 md:h-12' : 'w-12 h-12 md:w-14 md:h-14'}`}
+              />
+              جيو ماستر
+            </h1>
+            <button
+              onClick={() => setIsDark(prev => !prev)}
+              className={`glass-tab p-2 md:p-2.5 rounded-xl transition-all duration-300 border-2 ${
+                isDark
+                  ? 'bg-white/10 border-white/20 text-yellow-300 hover:bg-white/20 hover:border-yellow-400/40 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                  : 'bg-white/50 border-gray-300/50 text-indigo-600 hover:bg-white/70 hover:border-indigo-300/50 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
+              }`}
+              title={isDark ? 'الوضع الفاتح' : 'الوضع الغامق'}
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
           
           <div className={`flex items-center gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
             <button
@@ -386,18 +399,6 @@ export default function App() {
             >
               <ScanText size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>استخراج النصوص</span>
-            </button>
-            
-            <button
-              onClick={() => setIsDark(prev => !prev)}
-              className={`glass-tab p-2.5 md:p-3 rounded-2xl transition-all duration-300 border-2 ${
-                isDark
-                  ? 'bg-white/10 border-white/20 text-yellow-300 hover:bg-white/20 hover:border-yellow-400/40 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
-                  : 'bg-white/50 border-gray-300/50 text-indigo-600 hover:bg-white/70 hover:border-indigo-300/50 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
-              }`}
-              title={isDark ? 'الوضع الفاتح' : 'الوضع الغامق'}
-            >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
           </div>
         </header>
