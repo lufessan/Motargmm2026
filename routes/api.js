@@ -210,6 +210,29 @@ router.post('/chat', async (req, res) => {
   }
 });
 
+router.post('/extract-text', async (req, res) => {
+  try {
+    const { files } = req.body;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'لم يتم إرفاق أي ملف.' });
+    }
+
+    const file = files[0];
+    const extractedText = await extractTextFromFile(file.data, file.type);
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      return res.json({ text: 'لم يتم العثور على نصوص في هذا الملف.' });
+    }
+
+    res.json({ text: extractedText.trim() });
+  } catch (error) {
+    console.error('Extract text API error:', error.message);
+    res.status(500).json({
+      error: 'حدث خطأ أثناء استخراج النصوص. يرجى المحاولة مرة أخرى.',
+    });
+  }
+});
+
 router.post('/alternatives', async (req, res) => {
   try {
     const { originalInput, selectedModel: rawModel, translationDir } = req.body;

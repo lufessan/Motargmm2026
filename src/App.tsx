@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
-import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip } from 'lucide-react';
+import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip, ScanText, Copy, Check } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
   { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B (الأدق)' },
@@ -35,7 +35,7 @@ type Message = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'search' | 'translate'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'translate' | 'extract'>('search');
   const [inputText, setInputText] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileData, setFileData] = useState<FileData[]>([]);
@@ -43,12 +43,14 @@ export default function App() {
   const [translationDir, setTranslationDir] = useState<'en-ar' | 'ar-en'>('en-ar');
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
+  const [extractMessages, setExtractMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
   const [isDark, setIsDark] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
-  const currentMessages = activeTab === 'search' ? searchMessages : translateMessages;
-  const setCurrentMessages = activeTab === 'search' ? setSearchMessages : setTranslateMessages;
+  const currentMessages = activeTab === 'search' ? searchMessages : activeTab === 'translate' ? translateMessages : extractMessages;
+  const setCurrentMessages = activeTab === 'search' ? setSearchMessages : activeTab === 'translate' ? setTranslateMessages : setExtractMessages;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
