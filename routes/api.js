@@ -22,10 +22,10 @@ function getHF() {
 }
 
 function getGemini() {
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   const baseURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
   if (!apiKey) {
-    throw new Error('Gemini API key is not configured.');
+    throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY environment variable.');
   }
   return new GoogleGenAI({
     apiKey,
