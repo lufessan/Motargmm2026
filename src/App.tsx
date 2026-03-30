@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
-import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip, ScanText, Copy, Check } from 'lucide-react';
+import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip, ScanText, Copy, Check, Download } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
   { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B (الأدق)' },
@@ -48,7 +48,44 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
   const [isDark, setIsDark] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [showInstallSuccess, setShowInstallSuccess] = useState(false);
   
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    if (isStandalone) {
+      setIsInstalled(true);
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+      setShowInstallSuccess(true);
+      setTimeout(() => setShowInstallSuccess(false), 4000);
+    });
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+      setShowInstallSuccess(true);
+      setTimeout(() => setShowInstallSuccess(false), 4000);
+    }
+  };
+
   const currentMessages = activeTab === 'search' ? searchMessages : activeTab === 'translate' ? translateMessages : extractMessages;
   const setCurrentMessages = activeTab === 'search' ? setSearchMessages : activeTab === 'translate' ? setTranslateMessages : setExtractMessages;
   
@@ -332,6 +369,13 @@ export default function App() {
       />
       <div className={`fixed inset-0 -z-10 transition-all duration-500 ${isDark ? 'bg-gradient-to-b from-black/40 via-transparent to-black/60' : 'bg-gradient-to-b from-black/20 via-transparent to-black/30'}`} />
 
+      {showInstallSuccess && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce">
+          <Check size={20} />
+          <span className="font-bold">تم تثبيت التطبيق بنجاح!</span>
+        </div>
+      )}
+
       <div className="flex-grow flex flex-col z-10 h-full max-w-7xl mx-auto w-full p-2 md:p-6">
         
         <header className={`flex flex-col items-center shrink-0 transition-all duration-500 ${currentMessages.length > 0 ? 'mb-2 md:mb-6' : 'mb-6'}`}>
@@ -355,6 +399,24 @@ export default function App() {
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            {installPrompt && !isInstalled && (
+              <button
+                onClick={handleInstall}
+                className={`glass-tab p-2 md:p-2.5 rounded-xl transition-all duration-300 border-2 animate-pulse ${
+                  isDark
+                    ? 'bg-teal-500/20 border-teal-400/40 text-teal-300 hover:bg-teal-500/30 hover:border-teal-400/60 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'bg-teal-500/20 border-teal-400/50 text-teal-700 hover:bg-teal-500/30 hover:border-teal-500/60 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
+                }`}
+                title="تثبيت التطبيق"
+              >
+                <Download size={18} />
+              </button>
+            )}
+            {isInstalled && !showInstallSuccess && (
+              <span className={`p-2 rounded-xl ${isDark ? 'text-green-400' : 'text-green-600'}`} title="التطبيق مثبت">
+                <Check size={18} />
+              </span>
+            )}
           </div>
           
           <div className={`flex items-center gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
