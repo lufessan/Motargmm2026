@@ -267,4 +267,79 @@ router.post('/alternatives', async (req, res) => {
   }
 });
 
+router.post('/book-chat', async (req, res) => {
+  try {
+    const { question, bookText, useExternalSources, selectedModel: rawModel } = req.body;
+    const selectedModel = validateModel(rawModel);
+
+    if (!bookText || bookText.trim().length === 0) {
+      return res.status(400).json({ error: 'لم يتم تحميل أي كتاب بعد.' });
+    }
+
+    if (!question || question.trim().length === 0) {
+      return res.status(400).json({ error: 'يرجى كتابة سؤال.' });
+    }
+
+    const hf = getHF();
+    const bookContext = bookText.substring(0, 80000);
+
+    let prompt;
+    if (useExternalSources) {
+      prompt = `${NO_CHINESE}\n\nأنت مساعد أكاديمي متخصص. لديك النص التالي المستخرج من كتاب دراسي:\n\n--- بداية نص الكتاب ---\n${bookContext}\n--- نهاية نص الكتاب ---\n\nالمطلوب: أجب على السؤال التالي بالاعتماد على الكتاب كمصدر أساسي، مع إضافة معلومات تكميلية من مصادر خارجية موثوقة إن لزم الأمر. وضّح ما هو من الكتاب وما هو من مصادر خارجية. أجب باللغة العربية. إذا طُلب منك مصطلح بالإنجليزية قدّمه مع ترجمته.\n\nالسؤال: ${question}`;
+    } else {
+      prompt = `${NO_CHINESE}\n\nأنت مساعد أكاديمي متخصص. لديك النص التالي المستخرج من كتاب دراسي وهو المصدر الوحيد المتاح لك. لا تستخدم أي معلومات خارجية. أجب فقط بناءً على ما هو موجود في النص.\n\n--- بداية نص الكتاب ---\n${bookContext}\n--- نهاية نص الكتاب ---\n\nالمطلوب: أجب على السؤال التالي بالاعتماد فقط على نص الكتاب أعلاه. إذا لم تجد الإجابة في النص، قل "لم أجد إجابة لهذا السؤال في الكتاب المرفق". أجب باللغة العربية. إذا طُلب منك مصطلح بالإنجليزية قدّمه مع ترجمته.\n\nالسؤال: ${question}`;
+    }
+
+    let responseText;
+    try {
+      responseText = await callModel(hf, selectedModel, prompt);
+    } catch (primaryError) {
+      console.error('Book chat primary model failed, trying fallback...', primaryError.message);
+      const fallbackModel = selectedModel === 'Qwen/Qwen2.5-72B-Instruct'
+        ? 'meta-llama/Llama-3.3-70B-Instruct'
+        : 'Qwen/Qwen2.5-72B-Instruct';
+      responseText = await callModel(hf, fallbackModel, prompt);
+    }
+    responseText = responseText.replace(/[\u4e00-\u9fff\u3400-\u4dbf\u{20000}-\u{2a6df}\u{2a700}-\u{2b73f}\u{2b740}-\u{2b81f}\u{2b820}-\u{2ceaf}\u{2ceb0}-\u{2ebef}\u{30000}-\u{3134f}\u3000-\u303f\uff00-\uffef]/gu, '').trim();
+
+    res.json({ text: responseText || 'لم أتمكن من الإجابة.' });
+  } catch (error) {
+    console.error('Book chat API error:', error.message);
+    res.status(500).json({
+      error: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.',
+    });
+  }
+});
+
+router.post('/extract-book-text', async (req, res) => {
+  try {
+    const { fileData, fileType } = req.body;
+    if (!fileData) {
+      return res.status(400).json({ error: 'لم يتم إرفاق أي ملف.' });
+    }
+
+    let extractedText = '';
+    if (fileType === 'application/pdf') {
+      extractedText = await extractTextFromPDF(fileData);
+    } else if (fileType?.startsWith('image/')) {
+      extractedText = await extractTextFromImage(fileData);
+    } else {
+      return res.status(400).json({ error: 'نوع الملف غير مدعوم. يرجى رفع ملف PDF أو صورة.' });
+    }
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      return res.json({ text: '', error: 'لم يتم العثور على نصوص في هذا الملف.' });
+    }
+
+    const trimmed = extractedText.trim();
+    console.log(`Book text extracted: ${trimmed.length} chars`);
+    res.json({ text: trimmed, pages: Math.ceil(trimmed.length / 2000) });
+  } catch (error) {
+    console.error('Extract book text error:', error.message);
+    res.status(500).json({
+      error: 'حدث خطأ أثناء قراءة الملف. يرجى المحاولة مرة أخرى.',
+    });
+  }
+});
+
 export default router;

@@ -64,12 +64,15 @@ Runs on `http://0.0.0.0:PORT`
 - `GET /api/health` → `{ "status": "ok", "uptime": ..., "timestamp": ... }`
 - `POST /api/chat` → AI-powered geographic search or translation
 - `POST /api/alternatives` → Alternative meanings/translations
+- `POST /api/extract-book-text` → Extract text from uploaded PDF/image for book chat
+- `POST /api/book-chat` → Q&A grounded in uploaded book content (with optional external sources toggle)
 
 ## Features
 - **Geographic Search**: Ask questions about geography in Arabic
 - **Geographic Translator**: Translate geographic terms between English and Arabic with scientific accuracy
 - **Image Understanding**: Extract text from uploaded images using Gemini Vision AI (replaces Tesseract.js OCR for much better accuracy)
 - **PDF Support**: Extract text from uploaded PDF files via pdf-parse v2 (PDFParse class: load → getText → destroy)
+- **Book Chat (دردشة الكتاب)**: Upload a PDF book, then ask questions answered from book content. Toggle "مصادر خارجية" to allow the AI to supplement answers with general knowledge. Book text extracted via `/api/extract-book-text`, Q&A via `/api/book-chat` with model fallback.
 - RTL (right-to-left) layout for Arabic support
 - File upload support (images + PDFs)
 - Multi-model selection

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
-import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip, ScanText, Copy, Check, Download } from 'lucide-react';
+import { Upload, X, ArrowRightLeft, Search, Languages, Globe, User, Bot, ChevronDown, Link as LinkIcon, FileText, MoreVertical, Sun, Moon, Send, Paperclip, ScanText, Copy, Check, Download, BookOpen, Globe2, Trash2 } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
   { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B (الأدق)' },
@@ -35,7 +35,7 @@ type Message = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'search' | 'translate' | 'extract'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'translate' | 'extract' | 'book'>('search');
   const [inputText, setInputText] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileData, setFileData] = useState<FileData[]>([]);
@@ -44,6 +44,11 @@ export default function App() {
   const [searchMessages, setSearchMessages] = useState<Message[]>([]);
   const [translateMessages, setTranslateMessages] = useState<Message[]>([]);
   const [extractMessages, setExtractMessages] = useState<Message[]>([]);
+  const [bookMessages, setBookMessages] = useState<Message[]>([]);
+  const [bookText, setBookText] = useState('');
+  const [bookName, setBookName] = useState('');
+  const [bookLoading, setBookLoading] = useState(false);
+  const [useExternalSources, setUseExternalSources] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
   const [isDark, setIsDark] = useState(true);
@@ -86,8 +91,8 @@ export default function App() {
     }
   };
 
-  const currentMessages = activeTab === 'search' ? searchMessages : activeTab === 'translate' ? translateMessages : extractMessages;
-  const setCurrentMessages = activeTab === 'search' ? setSearchMessages : activeTab === 'translate' ? setTranslateMessages : setExtractMessages;
+  const currentMessages = activeTab === 'search' ? searchMessages : activeTab === 'translate' ? translateMessages : activeTab === 'extract' ? extractMessages : bookMessages;
+  const setCurrentMessages = activeTab === 'search' ? setSearchMessages : activeTab === 'translate' ? setTranslateMessages : activeTab === 'extract' ? setExtractMessages : setBookMessages;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -252,9 +257,92 @@ export default function App() {
     }
   };
 
+  const handleBookUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBookLoading(true);
+    setBookName(file.name);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const response = await fetch('/api/extract-book-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileData: reader.result as string, fileType: file.type }),
+        });
+        const data = await response.json();
+        if (data.text) {
+          setBookText(data.text);
+          const sysMsg: Message = {
+            id: Date.now().toString(),
+            role: 'model',
+            text: `تم تحميل الكتاب "${file.name}" بنجاح! (حوالي ${data.pages || '?'} صفحة)\n\nيمكنك الآن طرح أي سؤال وسأجيب بناءً على محتوى الكتاب فقط.`,
+          };
+          setBookMessages([sysMsg]);
+        } else {
+          setBookName('');
+          alert(data.error || 'لم يتم العثور على نصوص في الملف.');
+        }
+      } catch {
+        setBookName('');
+        alert('حدث خطأ أثناء قراءة الملف.');
+      } finally {
+        setBookLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleBookChatSubmit = async () => {
+    if (!inputText.trim() || !bookText) return;
+
+    const userMsgId = Date.now().toString();
+    const newUserMsg: Message = { id: userMsgId, role: 'user', text: inputText };
+    const modelMsgId = (Date.now() + 1).toString();
+    const newModelMsg: Message = { id: modelMsgId, role: 'model', text: '', loading: true };
+
+    setBookMessages(prev => [...prev, newUserMsg, newModelMsg]);
+    setLoading(true);
+    const question = inputText;
+    setInputText('');
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+
+    try {
+      const response = await fetch('/api/book-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, bookText, useExternalSources, selectedModel }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setBookMessages(prev => prev.map(msg =>
+        msg.id === modelMsgId ? { ...msg, text: data.text, loading: false } : msg
+      ));
+    } catch (error: any) {
+      setBookMessages(prev => prev.map(msg =>
+        msg.id === modelMsgId ? { ...msg, text: error.message || 'حدث خطأ.', loading: false } : msg
+      ));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveBook = () => {
+    setBookText('');
+    setBookName('');
+    setBookMessages([]);
+    setUseExternalSources(false);
+  };
+
   const handleSubmit = async () => {
     if (activeTab === 'extract') {
       return handleExtractSubmit();
+    }
+    if (activeTab === 'book') {
+      return handleBookChatSubmit();
     }
     if (!inputText.trim() && selectedFiles.length === 0) return;
 
@@ -465,6 +553,21 @@ export default function App() {
               <ScanText size={18} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>استخراج النصوص</span>
             </button>
+            <button
+              onClick={() => setActiveTab('book')}
+              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+                activeTab === 'book' 
+                  ? isDark
+                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
+                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
+                  : isDark
+                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
+              }`}
+            >
+              <BookOpen size={18} className="md:w-[20px] md:h-[20px]" />
+              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>دردشة الكتاب</span>
+            </button>
           </div>
         </header>
 
@@ -478,8 +581,29 @@ export default function App() {
                   ? 'اطرح أي سؤال جغرافي وسأقوم بالبحث في المصادر الموثوقة للإجابة عليه.' 
                   : activeTab === 'translate'
                   ? 'أدخل أي مصطلح جغرافي لترجمته بدقة علمية بين العربية والإنجليزية.'
-                  : 'ارفع صورة أو ملف PDF وسأستخرج منه جميع النصوص لتنسخها وتستخدمها.'}
+                  : activeTab === 'extract'
+                  ? 'ارفع صورة أو ملف PDF وسأستخرج منه جميع النصوص لتنسخها وتستخدمها.'
+                  : 'ارفع كتاباً (PDF) واسألني أي سؤال وسأجيبك من محتوى الكتاب مباشرة.'}
               </p>
+              {activeTab === 'book' && !bookText && (
+                <div className="mt-6">
+                  <label className={`cursor-pointer inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-lg font-bold transition-all duration-300 border-2 ${
+                    isDark 
+                      ? 'bg-white/15 border-white/30 text-white hover:bg-white/25 hover:border-white/45 shadow-[0_6px_24px_rgba(0,0,0,0.3)]'
+                      : 'bg-teal-500/15 border-teal-400/40 text-teal-800 hover:bg-teal-500/25 hover:border-teal-400/60 shadow-[0_6px_24px_rgba(0,0,0,0.1)]'
+                  }`}>
+                    <Upload size={22} />
+                    <span>رفع كتاب PDF</span>
+                    <input type="file" accept=".pdf" className="hidden" onChange={handleBookUpload} />
+                  </label>
+                  {bookLoading && (
+                    <div className="mt-4 flex items-center gap-2 justify-center">
+                      <div className="w-5 h-5 border-2 border-t-transparent border-current rounded-full animate-spin"></div>
+                      <span>جاري قراءة الكتاب...</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             currentMessages.map(msg => (
@@ -707,8 +831,42 @@ export default function App() {
                   </div>
                 </div>
 
+                {activeTab === 'book' && bookText && (
+                  <div className={`px-4 py-2 flex items-center justify-between gap-2 border-b transition-colors duration-500 ${
+                    isDark ? 'border-white/10 bg-white/5' : 'border-gray-200/60 bg-gray-50/50'
+                  }`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <BookOpen size={16} className="shrink-0 text-teal-400" />
+                      <span className="text-xs truncate">{bookName}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => setUseExternalSources(prev => !prev)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] md:text-xs font-medium transition-all duration-300 ${
+                          useExternalSources 
+                            ? isDark ? 'bg-teal-500/25 text-teal-300 border border-teal-500/40' : 'bg-teal-100 text-teal-700 border border-teal-300'
+                            : isDark ? 'bg-white/5 text-gray-400 border border-white/10' : 'bg-gray-100 text-gray-500 border border-gray-200'
+                        }`}
+                        title="تفعيل/إيقاف المصادر الخارجية"
+                      >
+                        <Globe2 size={12} />
+                        مصادر خارجية
+                      </button>
+                      <button
+                        onClick={handleRemoveBook}
+                        className={`p-1.5 rounded-lg transition-all duration-300 ${
+                          isDark ? 'text-red-400 hover:bg-red-500/20' : 'text-red-500 hover:bg-red-50'
+                        }`}
+                        title="إزالة الكتاب"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="px-4 py-2">
-                  {fileData.length > 0 && (
+                  {fileData.length > 0 && activeTab !== 'book' && (
                     <div className="flex flex-wrap gap-2 mb-2">
                       {fileData.map((file, idx) => (
                         <div key={idx} className={`relative inline-flex items-center gap-2 p-1.5 rounded-xl border pr-7 transition-colors duration-500 ${
@@ -745,24 +903,26 @@ export default function App() {
                       className="hidden"
                       id="chat-file-upload"
                     />
-                    <label
-                      htmlFor="chat-file-upload"
-                      className={`p-2 transition-all duration-300 rounded-xl cursor-pointer shrink-0 mb-0.5 ${
-                        isDark 
-                          ? 'text-gray-400 hover:text-teal-300 hover:bg-white/10' 
-                          : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50'
-                      }`}
-                      title="إرفاق صور أو ملفات PDF"
-                    >
-                      <Paperclip size={20} />
-                    </label>
+                    {activeTab !== 'book' && (
+                      <label
+                        htmlFor="chat-file-upload"
+                        className={`p-2 transition-all duration-300 rounded-xl cursor-pointer shrink-0 mb-0.5 ${
+                          isDark 
+                            ? 'text-gray-400 hover:text-teal-300 hover:bg-white/10' 
+                            : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50'
+                        }`}
+                        title="إرفاق صور أو ملفات PDF"
+                      >
+                        <Paperclip size={20} />
+                      </label>
+                    )}
 
                     <textarea
                       ref={textareaRef}
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : activeTab === 'translate' ? "أدخل المصطلح للترجمة..." : "ارفع صورة أو PDF لاستخراج النصوص..."}
+                      placeholder={activeTab === 'search' ? "اسأل جيو ماستر..." : activeTab === 'translate' ? "أدخل المصطلح للترجمة..." : activeTab === 'extract' ? "ارفع صورة أو PDF لاستخراج النصوص..." : bookText ? "اسأل سؤالك عن الكتاب..." : "ارفع كتاب PDF أولاً..."}
                       className={`flex-grow bg-transparent border-none outline-none resize-none py-2 px-1 text-sm md:text-base leading-relaxed scrollbar-hide transition-colors duration-500 ${
                         isDark 
                           ? 'text-white placeholder-gray-500' 
@@ -774,7 +934,7 @@ export default function App() {
 
                     <button
                       onClick={handleSubmit}
-                      disabled={loading || (activeTab === 'extract' ? selectedFiles.length === 0 : (!inputText.trim() && selectedFiles.length === 0))}
+                      disabled={loading || (activeTab === 'extract' ? selectedFiles.length === 0 : activeTab === 'book' ? (!inputText.trim() || !bookText) : (!inputText.trim() && selectedFiles.length === 0))}
                       className={`group p-2.5 rounded-xl transition-all duration-300 shrink-0 mb-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
                         isDark
                           ? 'bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white shadow-[0_4px_15px_rgba(20,184,166,0.3)] hover:shadow-[0_6px_20px_rgba(20,184,166,0.5)]'
