@@ -65,5 +65,3 @@ run = ["node", "server.js"]
 
 [userenv]
 
-[userenv.shared]
-HUGGINGFACE_API_TOKEN = "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"

@@ -54,6 +54,7 @@ export default function App() {
   const [isDark, setIsDark] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstallSuccess, setShowInstallSuccess] = useState(false);
   
@@ -507,68 +508,77 @@ export default function App() {
             )}
           </div>
           
-          <div className={`flex items-center gap-2 md:gap-5 mt-2 md:mt-5 transition-all duration-500 overflow-x-auto scrollbar-hide w-full px-2 md:px-0 justify-center ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
-                activeTab === 'search' 
-                  ? isDark
-                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
-                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
-                  : isDark
-                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
-                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
-              }`}
-            >
-              <Search size={15} className="md:w-[20px] md:h-[20px]" />
-              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>البحث الجغرافي</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('translate')}
-              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
-                activeTab === 'translate' 
-                  ? isDark
-                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
-                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
-                  : isDark
-                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
-                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
-              }`}
-            >
-              <Languages size={15} className="md:w-[20px] md:h-[20px]" />
-              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>المترجم الجغرافي</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('extract')}
-              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
-                activeTab === 'extract' 
-                  ? isDark
-                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
-                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
-                  : isDark
-                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
-                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
-              }`}
-            >
-              <ScanText size={15} className="md:w-[20px] md:h-[20px]" />
-              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>استخراج النصوص</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('book')}
-              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
-                activeTab === 'book' 
-                  ? isDark
-                    ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
-                    : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl scale-105'
-                  : isDark
-                    ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
-                    : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
-              }`}
-            >
-              <BookOpen size={15} className="md:w-[20px] md:h-[20px]" />
-              <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>دردشة الكتاب</span>
-            </button>
-          </div>
+          {(() => {
+            const tabs = [
+              { id: 'search' as const, label: 'البحث الجغرافي', icon: <Search size={18} /> },
+              { id: 'translate' as const, label: 'المترجم الجغرافي', icon: <Languages size={18} /> },
+              { id: 'extract' as const, label: 'استخراج النصوص', icon: <ScanText size={18} /> },
+              { id: 'book' as const, label: 'دردشة الكتاب', icon: <BookOpen size={18} /> },
+            ];
+            const activeTabData = tabs.find(t => t.id === activeTab)!;
+            const activeStyle = isDark
+              ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl'
+              : 'bg-teal-500/25 border-teal-400/50 text-teal-900 shadow-[0_8px_32px_rgba(20,184,166,0.2),inset_0_1px_0_rgba(255,255,255,0.5),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-xl';
+            const inactiveStyle = isDark
+              ? 'bg-white/8 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/30 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+              : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]';
+            return (
+              <>
+                <div className="relative md:hidden mt-2 px-4">
+                  <button
+                    onClick={() => setMobileMenuOpen(prev => !prev)}
+                    className={`glass-tab w-full px-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center justify-between border-2 ${activeStyle}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {activeTabData.icon}
+                      <span>{activeTabData.label}</span>
+                    </div>
+                    <ChevronDown size={18} className={`transition-transform duration-300 ${mobileMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
+                      <div className={`absolute top-full left-4 right-4 mt-2 rounded-2xl border-2 overflow-hidden z-50 transition-all duration-300 ${
+                        isDark
+                          ? 'bg-gray-900/95 border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.6)]'
+                          : 'bg-white/95 border-gray-200/60 shadow-[0_12px_40px_rgba(0,0,0,0.15)]'
+                      } backdrop-blur-xl`}>
+                        {tabs.map(tab => (
+                          <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
+                            className={`w-full px-4 py-3 flex items-center gap-3 text-sm font-bold transition-all duration-200 ${
+                              tab.id === activeTab
+                                ? isDark ? 'bg-white/15 text-white' : 'bg-teal-50 text-teal-800'
+                                : isDark ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                            }`}
+                          >
+                            {tab.icon}
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className={`hidden md:flex items-center gap-5 mt-5 transition-all duration-500 justify-center`}>
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`glass-tab px-8 py-3 rounded-2xl text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+                        tab.id === activeTab ? activeStyle + ' scale-105' : inactiveStyle + ' hover:scale-102'
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </header>
 
         <div className="flex-grow overflow-y-auto flex flex-col gap-6 pb-32 md:pb-4 px-2 md:px-4 scrollbar-hide">
