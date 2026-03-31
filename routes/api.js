@@ -169,16 +169,16 @@ router.post('/chat', async (req, res) => {
     } else {
       if (fileExtractedText) {
         if (translationDir === 'en-ar') {
-          prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص. فيما يلي نص مستخرج من صورة أو ملف. ترجم جميع المصطلحات الجغرافية الموجودة فيه إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين.${withExplanation ? ' أضف شرحاً تفصيلياً لكل مصطلح.' : ''}\n\nالنص المستخرج:\n${textToProcess}\n\nالترجمة${withExplanation ? ' والشرح' : ''}:`;
+          prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص ودقيق جداً. فيما يلي نص مستخرج من صورة أو ملف. ترجم جميع المصطلحات الجغرافية الموجودة فيه إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. إذا كان لأي مصطلح أكثر من معنى، اذكر جميع المعاني.${withExplanation ? ' أضف شرحاً تفصيلياً لكل مصطلح.' : ''}\n\nقواعد مهمة: Temperate = معتدل (ليس مداري/استوائي)، Tropical = مداري (ليس استوائي/معتدل)، Equatorial = استوائي، lowland = أراضي منخفضة / سهول، highland = أراضي مرتفعة / مرتفعات، Arctic = القطب الشمالي، Antarctic = القطب الجنوبي.\n\nالنص المستخرج:\n${textToProcess}\n\nالترجمة${withExplanation ? ' والشرح' : ''}:`;
         } else {
           prompt = `You are an expert geographic translator. Below is text extracted from an image or file. Translate all Arabic geographic terms found in it to English.${withExplanation ? ' Include a clear explanation for each term.' : ' Give only the translations.'} Answer ONLY in English and Arabic, no other languages.\n\nExtracted text:\n${textToProcess}\n\nTranslation${withExplanation ? ' and Explanation' : ''}:`;
         }
       } else {
         if (translationDir === 'en-ar') {
           if (withExplanation) {
-            prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين، ثم أضف شرحاً تفصيلياً للمصطلح باللغة العربية فقط.\n\nمثال:\nlandform = أشكال سطح الأرض (التضاريس)\nالشرح: هي الأشكال والمعالم الطبيعية التي تتكون على سطح الأرض نتيجة العوامل الداخلية كالبراكين والزلازل والعوامل الخارجية كالتعرية والترسيب، وتشمل الجبال والسهول والهضاب والوديان.\n\nالمصطلح: ${textToProcess}\nالترجمة والشرح:`;
+            prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص ودقيق جداً. ترجم المصطلح الجغرافي التالي إلى العربية. إذا كان للمصطلح أكثر من معنى أو ترجمة، اذكر جميع المعاني الممكنة. ضع المصطلح الأكاديمي بين قوسين، ثم أضف شرحاً تفصيلياً.\n\nقواعد مهمة للدقة:\n- Temperate = معتدل (وليس مداري أو استوائي). مثال: Temperate zone = المنطقة المعتدلة\n- Tropical = مداري (وليس استوائي أو معتدل). مثال: Tropical zone = المنطقة المدارية\n- Equatorial = استوائي. مثال: Equatorial region = المنطقة الاستوائية\n- lowland = لها معنيان: الأراضي المنخفضة / السهول\n- highland = لها معنيان: الأراضي المرتفعة / المرتفعات\n- North Pole = القطب الشمالي (وليس الجنوبي)\n- South Pole = القطب الجنوبي (وليس الشمالي)\n- Arctic = القطب الشمالي / المنطقة القطبية الشمالية\n- Antarctic = القطب الجنوبي / المنطقة القطبية الجنوبية\n\nمثال:\nlandform = أشكال سطح الأرض (التضاريس)\nالشرح: هي الأشكال والمعالم الطبيعية التي تتكون على سطح الأرض.\n\nlowland = الأراضي المنخفضة / السهول\nالشرح: مناطق ذات ارتفاع قليل عن مستوى سطح البحر.\n\nالمصطلح: ${textToProcess}\nالترجمة والشرح:`;
           } else {
-            prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. أعط الترجمة فقط بدون أي شرح أو نص إنجليزي.\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\ncontinental shelf = الجرف القاري (الرصيف القاري)\nerosion = عوامل تآكل سطح الأرض (التعرية)\nplateau = المنطقة المرتفعة المسطحة (الهضبة)\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
+            prompt = `${NO_CHINESE}\n\nأنت مترجم جغرافي متخصص ودقيق جداً. ترجم المصطلح الجغرافي التالي إلى العربية بشكل مفهوم وسهل، مع وضع المصطلح الأكاديمي بين قوسين. إذا كان للمصطلح أكثر من معنى أو ترجمة، اذكر جميع المعاني. أعط الترجمة فقط بدون شرح.\n\nقواعد مهمة:\n- Temperate = معتدل (وليس مداري أو استوائي)\n- Tropical = مداري (وليس استوائي أو معتدل)\n- Equatorial = استوائي\n- Arctic = القطب الشمالي / المنطقة القطبية الشمالية\n- Antarctic = القطب الجنوبي / المنطقة القطبية الجنوبية\n\nأمثلة:\nlandform = أشكال سطح الأرض (التضاريس)\nlowland = الأراضي المنخفضة / السهول\nhighland = الأراضي المرتفعة / المرتفعات\ncontinental shelf = الجرف القاري (الرصيف القاري)\ntemperate climate = المناخ المعتدل\n\nالمصطلح: ${textToProcess}\nالترجمة:`;
           }
         } else {
           if (withExplanation) {
@@ -250,7 +250,7 @@ router.post('/alternatives', async (req, res) => {
     const hf = getHF();
     let prompt;
     if (translationDir === 'en-ar') {
-      prompt = `${NO_CHINESE}\n\nأعط ترجمتين بديلتين للمصطلح الجغرافي التالي إلى العربية. أعط الترجمات فقط بدون شرح، كل ترجمة في سطر:\n\n${textToProcess}`;
+      prompt = `${NO_CHINESE}\n\nأعط ترجمتين بديلتين أو أكثر للمصطلح الجغرافي التالي إلى العربية. أعط جميع المعاني والترجمات الممكنة بدون شرح، كل ترجمة في سطر. تذكر: Temperate = معتدل، Tropical = مداري، Equatorial = استوائي.\n\n${textToProcess}`;
     } else {
       prompt = `Give 2 alternative English translations for this Arabic geographic term. Give only translations, each on a new line. No Chinese or other languages:\n\n${textToProcess}`;
     }
