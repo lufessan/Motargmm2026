@@ -507,10 +507,10 @@ export default function App() {
             )}
           </div>
           
-          <div className={`flex items-center gap-3 md:gap-5 mt-2 md:mt-5 transition-all duration-500 ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
+          <div className={`flex items-center gap-2 md:gap-5 mt-2 md:mt-5 transition-all duration-500 overflow-x-auto scrollbar-hide w-full px-2 md:px-0 justify-center ${currentMessages.length > 0 ? 'scale-90 md:scale-100' : ''}`}>
             <button
               onClick={() => setActiveTab('search')}
-              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
                 activeTab === 'search' 
                   ? isDark
                     ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
@@ -520,12 +520,12 @@ export default function App() {
                     : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
-              <Search size={18} className="md:w-[20px] md:h-[20px]" />
+              <Search size={15} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>البحث الجغرافي</span>
             </button>
             <button
               onClick={() => setActiveTab('translate')}
-              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
                 activeTab === 'translate' 
                   ? isDark
                     ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
@@ -535,12 +535,12 @@ export default function App() {
                     : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
-              <Languages size={18} className="md:w-[20px] md:h-[20px]" />
+              <Languages size={15} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>المترجم الجغرافي</span>
             </button>
             <button
               onClick={() => setActiveTab('extract')}
-              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
                 activeTab === 'extract' 
                   ? isDark
                     ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
@@ -550,12 +550,12 @@ export default function App() {
                     : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
-              <ScanText size={18} className="md:w-[20px] md:h-[20px]" />
+              <ScanText size={15} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>استخراج النصوص</span>
             </button>
             <button
               onClick={() => setActiveTab('book')}
-              className={`glass-tab px-5 md:px-8 py-2 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2.5 border-2 ${
+              className={`glass-tab px-3 md:px-8 py-2 md:py-3 rounded-2xl text-xs md:text-base font-bold transition-all duration-300 flex items-center gap-1.5 md:gap-2.5 border-2 shrink-0 ${
                 activeTab === 'book' 
                   ? isDark
                     ? 'bg-white/20 border-white/40 text-white shadow-[0_8px_32px_rgba(255,255,255,0.15),inset_0_1px_0_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-xl scale-105'
@@ -565,7 +565,7 @@ export default function App() {
                     : 'bg-white/40 border-gray-300/50 text-gray-600 hover:bg-white/60 hover:border-teal-300/50 hover:scale-102 backdrop-blur-lg shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]'
               }`}
             >
-              <BookOpen size={18} className="md:w-[20px] md:h-[20px]" />
+              <BookOpen size={15} className="md:w-[20px] md:h-[20px]" />
               <span className={currentMessages.length > 0 ? 'hidden md:inline' : 'inline'}>دردشة الكتاب</span>
             </button>
           </div>
